@@ -1,5 +1,6 @@
 module FootballData exposing
     ( Competition
+    , CompetitionId
     , Competitions
     , Match
     , Matches
@@ -11,6 +12,7 @@ module FootballData exposing
     )
 
 import Helpers.Decode as Decode
+import Helpers.Http as Http
 import Http
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Extra as Decode
@@ -80,8 +82,8 @@ standingsDecoder =
         |> Decode.andField "table" (Decode.list tablePositionDecoder)
 
 
-getStandings : String -> (Result Http.Error Table -> msg) -> Cmd msg
-getStandings key toMessage =
+getStandings : String -> CompetitionId -> (Http.Status Table -> msg) -> Cmd msg
+getStandings key competitionId toMessage =
     let
         allStandingsDecoder =
             Decode.field "standings" (Decode.list standingsDecoder)
@@ -101,7 +103,12 @@ getStandings key toMessage =
     in
     { method = "GET"
     , headers = [ Http.header "X-Auth-Token" key ]
-    , url = "https://api.football-data.org/v2/competitions/2021/standings"
+    , url =
+        [ "https://api.football-data.org/v2/competitions/"
+        , competitionId |> String.fromInt
+        , "/standings"
+        ]
+            |> String.concat
     , body = Http.emptyBody
     , expect =
         allStandingsDecoder
@@ -169,8 +176,12 @@ type alias Competitions =
     List Competition
 
 
+type alias CompetitionId =
+    Int
+
+
 type alias Competition =
-    { id : Int
+    { id : CompetitionId
     , name : String
     , region : String
     }
@@ -217,8 +228,8 @@ type alias Score =
     }
 
 
-getMatches : String -> (Result Http.Error Matches -> msg) -> Cmd msg
-getMatches key toMessage =
+getMatches : String -> CompetitionId -> (Http.Status Matches -> msg) -> Cmd msg
+getMatches key competitionId toMessage =
     let
         scoreDecoder =
             Decode.succeed Score
@@ -233,7 +244,12 @@ getMatches key toMessage =
     in
     { method = "GET"
     , headers = [ Http.header "X-Auth-Token" key ]
-    , url = "https://api.football-data.org/v2/competitions/2021/matches"
+    , url =
+        [ "https://api.football-data.org/v2/competitions/"
+        , competitionId |> String.fromInt
+        , "/matches"
+        ]
+            |> String.concat
     , body = Http.emptyBody
     , expect =
         matchDecoder

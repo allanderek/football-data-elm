@@ -4,6 +4,7 @@ import FootballData
 import Helpers.Http as Http
 import Helpers.Return as Return
 import Http
+import List.Extra as List
 import Ports
 import Private.Key
 import Table
@@ -39,6 +40,7 @@ init _ =
         , competitions = []
         , matches = []
         }
+    , currentCompetition = 2021
     }
         |> outputPage
 
@@ -55,8 +57,20 @@ drawPage model =
 
         PageCompetitions ->
             let
+                formatSelected competition =
+                    case competition.id == model.currentCompetition of
+                        True ->
+                            "X"
+
+                        False ->
+                            ""
+
                 columns =
                     [ { title = ""
+                      , justify = Table.CentreJustify
+                      , fromRow = always formatSelected
+                      }
+                    , { title = ""
                       , justify = Table.RightJustify
                       , fromRow = \index _ -> index + 1 |> String.fromInt
                       }
@@ -120,6 +134,7 @@ type alias Flags =
 type alias Model =
     { data : ModelData
     , page : Page
+    , currentCompetition : FootballData.CompetitionId
     }
 
 
@@ -147,6 +162,22 @@ type Msg
     | GetStandingsResponse (Http.Status FootballData.Table)
     | GetCompetitionsResponse (Http.Status FootballData.Competitions)
     | GetMatchesResponse (Http.Status FootballData.Matches)
+
+
+updateCompetition : (Int -> Int) -> Model -> Model
+updateCompetition moveI model =
+    let
+        isCurrent competition =
+            competition.id == model.currentCompetition
+
+        newCompetitionId =
+            List.findIndex isCurrent model.data.competitions
+                |> Maybe.map moveI
+                |> Maybe.andThen (\i -> List.getAt i model.data.competitions)
+                |> Maybe.map .id
+                |> Maybe.withDefault model.currentCompetition
+    in
+    { model | currentCompetition = newCompetitionId }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -222,54 +253,68 @@ update msg model =
                 |> Return.withModel { model | page = PageCompetitions }
 
         Input "t" ->
-            FootballData.getStandings Private.Key.key GetStandingsResponse
+            FootballData.getStandings Private.Key.key model.currentCompetition GetStandingsResponse
                 |> Return.withModel { model | page = PageTable }
 
         Input "m" ->
-            FootballData.getMatches Private.Key.key GetMatchesResponse
+            FootballData.getMatches Private.Key.key model.currentCompetition GetMatchesResponse
                 |> Return.withModel { model | page = PageMatches 0 }
 
         Input "j" ->
             let
-                newPage =
+                newModel =
                     case model.page of
                         PageWelcome ->
-                            PageWelcome
+                            model
 
                         PageTable ->
-                            PageTable
+                            model
 
                         PageCompetitions ->
-                            PageCompetitions
+                            let
+                                moveI i =
+                                    (i + 1)
+                                        |> min (List.length model.data.competitions)
+                            in
+                            updateCompetition moveI model
 
                         PageMatches i ->
-                            (i + 1)
-                                |> min (List.length model.data.matches)
-                                |> PageMatches
+                            { model
+                                | page =
+                                    (i + 1)
+                                        |> min (List.length model.data.matches)
+                                        |> PageMatches
+                            }
             in
-            { model | page = newPage }
-                |> outputPage
+            outputPage newModel
 
         Input "k" ->
             let
-                newPage =
+                newModel =
                     case model.page of
                         PageWelcome ->
-                            PageWelcome
+                            model
 
                         PageTable ->
-                            PageTable
+                            model
 
                         PageCompetitions ->
-                            PageCompetitions
+                            let
+                                moveI i =
+                                    (i - 1)
+                                        |> max 0
+                            in
+                            updateCompetition moveI model
 
                         PageMatches i ->
-                            (i - 1)
-                                |> max 0
-                                |> PageMatches
+                            { model
+                                | page =
+                                    (i - 1)
+                                        |> max 0
+                                        |> PageMatches
+                            }
             in
-            { model | page = newPage }
-                |> outputPage
+            outputPage newModel
 
         Input inputCommand ->
             [ "I'm sorry I do not understand that command: '"
