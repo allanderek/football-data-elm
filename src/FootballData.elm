@@ -9,6 +9,7 @@ import Http
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Extra as Decode
 import List.Extra as List
+import Table
 
 
 type alias Team =
@@ -109,14 +110,50 @@ getStandings key toMessage =
 formatStandings : Table -> String
 formatStandings table =
     let
-        showRow index row =
-            [ index + 1 |> String.fromInt
-            , row.team.name
-            , row.gamesPlayed |> String.fromInt
-            , row.form
+        integerFormat get _ row =
+            get row |> String.fromInt
+
+        columns =
+            [ { title = "P"
+              , justify = Table.RightJustify
+              , fromRow = \index _ -> index + 1 |> String.fromInt
+              }
+            , { title = "Team"
+              , justify = Table.LeftJustify
+              , fromRow = \_ r -> r.team.name
+              }
+            , { title = "Pld"
+              , justify = Table.RightJustify
+              , fromRow = integerFormat .gamesPlayed
+              }
+            , { title = "W"
+              , justify = Table.RightJustify
+              , fromRow = integerFormat .won
+              }
+            , { title = "D"
+              , justify = Table.RightJustify
+              , fromRow = integerFormat .draw
+              }
+            , { title = "L"
+              , justify = Table.RightJustify
+              , fromRow = integerFormat .lost
+              }
+            , { title = "GF"
+              , justify = Table.RightJustify
+              , fromRow = integerFormat .goalsFor
+              }
+            , { title = "GA"
+              , justify = Table.RightJustify
+              , fromRow = integerFormat .goalsAgainst
+              }
+            , { title = "GD"
+              , justify = Table.RightJustify
+              , fromRow = integerFormat .goalDifference
+              }
+            , { title = "Pts"
+              , justify = Table.RightJustify
+              , fromRow = integerFormat .points
+              }
             ]
-                |> String.join "  "
     in
-    table
-        |> List.indexedMap showRow
-        |> String.join "\n"
+    Table.view columns table
