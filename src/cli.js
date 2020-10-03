@@ -1,8 +1,6 @@
 var tty = require('tty');  
-
-
-
 var Elm = require('./main').Elm;
+var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 
 var stdin = process.stdin;
 

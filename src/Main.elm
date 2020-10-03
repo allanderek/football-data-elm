@@ -16,9 +16,16 @@ main =
         }
 
 
+outputMessage : Model -> String -> ( Model, Cmd Msg )
+outputMessage model output =
+    output
+        |> Ports.put
+        |> Return.withModel model
+
+
 init : Flags -> ( Model, Cmd Msg )
-init _ =
-    Return.noCommand ()
+init model =
+    outputMessage model "Press 't' for table."
 
 
 subscriptions : Model -> Sub Msg
@@ -41,26 +48,41 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    let
-        outputMessage m s =
-            s
-                |> Ports.put
-                |> Return.withModel m
-    in
     case msg of
-        GetStandingsResponse (Err _) ->
-            -- "I'm sorry there was some error getting the current standings"
-            -- "Hello goodbye"
-            --     |> outputMessage model
-            Return.noCommand model
+        GetStandingsResponse (Err error) ->
+            let
+                errorString =
+                    case error of
+                        Http.BadUrl s ->
+                            String.append "Bad url: " s
+
+                        Http.Timeout ->
+                            "Timeout"
+
+                        Http.NetworkError ->
+                            "Network error"
+
+                        Http.BadStatus i ->
+                            String.fromInt i
+                                |> String.append "Bad status: "
+
+                        Http.BadBody s ->
+                            String.append "Bad body: " s
+
+                message =
+                    "I'm sorry there was some error getting the current standings"
+            in
+            [ message
+            , errorString
+            ]
+                |> String.join "\n"
+                |> outputMessage model
 
         GetStandingsResponse (Ok standings) ->
-            -- FootballData.formatStandings standings
-            -- "I'm supposed to be table output"
-            --    |> outputMessage model
-            Return.noCommand model
+            FootballData.formatStandings standings
+                |> outputMessage model
 
-        Input "table\n" ->
+        Input "t" ->
             [ FootballData.getStandings Private.Key.key GetStandingsResponse
             ]
                 |> Cmd.batch
