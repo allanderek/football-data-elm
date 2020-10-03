@@ -52,6 +52,7 @@ teamDecoder =
         |> Decode.andField "crestUrl" Decode.string
 
 
+standingsDecoder : Decoder Standings
 standingsDecoder =
     let
         tablePositionDecoder =
@@ -107,4 +108,15 @@ getStandings key toMessage =
 
 formatStandings : Table -> String
 formatStandings table =
-    "I'm supposed to format a table."
+    let
+        showRow index row =
+            [ index + 1 |> String.fromInt
+            , row.team.name
+            , row.gamesPlayed |> String.fromInt
+            , row.form
+            ]
+                |> String.join "  "
+    in
+    table
+        |> List.indexedMap showRow
+        |> String.join "\n"
