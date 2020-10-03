@@ -1,6 +1,12 @@
 module FootballData exposing
-    ( Table
+    ( Competition
+    , Competitions
+    , Match
+    , Matches
+    , Table
     , formatStandings
+    , getCompetitions
+    , getMatches
     , getStandings
     )
 
@@ -157,3 +163,84 @@ formatStandings table =
             ]
     in
     Table.view columns table
+
+
+type alias Competitions =
+    List Competition
+
+
+type alias Competition =
+    { id : Int
+    , name : String
+    , region : String
+    }
+
+
+getCompetitions : String -> (Result Http.Error Competitions -> msg) -> Cmd msg
+getCompetitions key toMessage =
+    let
+        competitionDecoder =
+            Decode.succeed Competition
+                |> Decode.andField "id" Decode.int
+                |> Decode.andField "name" Decode.string
+                |> Decode.andMap (Decode.at [ "area", "name" ] Decode.string)
+    in
+    { method = "GET"
+    , headers = [ Http.header "X-Auth-Token" key ]
+    , url = "https://api.football-data.org/v2/competitions?plan=TIER_ONE"
+    , body = Http.emptyBody
+    , expect =
+        competitionDecoder
+            |> Decode.list
+            |> Decode.field "competitions"
+            |> Http.expectJson toMessage
+    , timeout = Nothing
+    , tracker = Nothing
+    }
+        |> Http.request
+
+
+type alias Matches =
+    List Match
+
+
+type alias Match =
+    { homeTeam : TeamName
+    , awayTeam : TeamName
+    , score : Score
+    }
+
+
+type alias Score =
+    { home : Maybe Int
+    , away : Maybe Int
+    }
+
+
+getMatches : String -> (Result Http.Error Matches -> msg) -> Cmd msg
+getMatches key toMessage =
+    let
+        scoreDecoder =
+            Decode.succeed Score
+                |> Decode.andField "homeTeam" (Decode.maybe Decode.int)
+                |> Decode.andField "awayTeam" (Decode.maybe Decode.int)
+
+        matchDecoder =
+            Decode.succeed Match
+                |> Decode.andFieldAt [ "homeTeam", "name" ] Decode.string
+                |> Decode.andFieldAt [ "awayTeam", "name" ] Decode.string
+                |> Decode.andFieldAt [ "score", "fullTime" ] scoreDecoder
+    in
+    { method = "GET"
+    , headers = [ Http.header "X-Auth-Token" key ]
+    , url = "https://api.football-data.org/v2/competitions/2021/matches"
+    , body = Http.emptyBody
+    , expect =
+        matchDecoder
+            |> Decode.list
+            |> Decode.field "matches"
+            |> Http.expectJson toMessage
+    , timeout = Nothing
+    , tracker = Nothing
+    }
+        |> Http.request
