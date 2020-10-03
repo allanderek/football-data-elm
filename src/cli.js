@@ -21,7 +21,7 @@ var clear_screen = function () {
 };
 
 clear_screen();
-var main = Elm.Main.init();
+var main = Elm.Main.init( { flags: { 'rows': process.stdout.rows } }) ;
 
 
 // on any data into stdin

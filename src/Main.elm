@@ -4,13 +4,15 @@ import FootballData
 import Helpers.Http as Http
 import Helpers.Return as Return
 import Http
+import Json.Decode as Decode
 import List.Extra as List
 import Ports
 import Private.Key
+import ProgramFlags exposing (ProgramFlags)
 import Table
 
 
-main : Program Flags Model Msg
+main : Program ProgramFlags Model Msg
 main =
     Platform.worker
         { init = init
@@ -32,8 +34,8 @@ outputPage model =
         |> outputMessage model
 
 
-init : Flags -> ( Model, Cmd Msg )
-init _ =
+init : ProgramFlags -> ( Model, Cmd Msg )
+init flags =
     { page = PageWelcome
     , data =
         { standings = []
@@ -41,6 +43,8 @@ init _ =
         , matches = []
         }
     , currentCompetition = 2021
+    , screenRows =
+        ProgramFlags.decodeFlag flags 30 "rows" Decode.int
     }
         |> outputPage
 
@@ -114,7 +118,8 @@ drawPage model =
                     ]
 
                 screenRows =
-                    30
+                    -- minus 1 is intended to be for the header
+                    model.screenRows - 1
             in
             model.data.matches
                 |> List.drop i
@@ -127,14 +132,11 @@ subscriptions _ =
     Ports.get Input
 
 
-type alias Flags =
-    ()
-
-
 type alias Model =
     { data : ModelData
     , page : Page
     , currentCompetition : FootballData.CompetitionId
+    , screenRows : Int
     }
 
 
