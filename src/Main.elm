@@ -229,6 +229,48 @@ update msg model =
             FootballData.getMatches Private.Key.key GetMatchesResponse
                 |> Return.withModel { model | page = PageMatches 0 }
 
+        Input "j" ->
+            let
+                newPage =
+                    case model.page of
+                        PageWelcome ->
+                            PageWelcome
+
+                        PageTable ->
+                            PageTable
+
+                        PageCompetitions ->
+                            PageCompetitions
+
+                        PageMatches i ->
+                            (i + 1)
+                                |> min (List.length model.data.matches)
+                                |> PageMatches
+            in
+            { model | page = newPage }
+                |> outputPage
+
+        Input "k" ->
+            let
+                newPage =
+                    case model.page of
+                        PageWelcome ->
+                            PageWelcome
+
+                        PageTable ->
+                            PageTable
+
+                        PageCompetitions ->
+                            PageCompetitions
+
+                        PageMatches i ->
+                            (i - 1)
+                                |> max 0
+                                |> PageMatches
+            in
+            { model | page = newPage }
+                |> outputPage
+
         Input inputCommand ->
             [ "I'm sorry I do not understand that command: '"
             , inputCommand
