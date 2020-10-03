@@ -1,11 +1,10 @@
 port module Ports exposing
-    (put,
-    get)
+    ( get
+    , put
+    )
+
 
 port get : (String -> msg) -> Sub msg
 
 
 port put : String -> Cmd msg
-
-
-

@@ -2,7 +2,13 @@ module Helpers.Return exposing
     ( noCommand
     , withCommand
     , withCommands
+    , withModel
     )
+
+
+withModel : model -> Cmd msg -> ( model, Cmd msg )
+withModel model command =
+    ( model, command )
 
 
 withCommand : Cmd msg -> model -> ( model, Cmd msg )
