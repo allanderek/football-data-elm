@@ -31,7 +31,7 @@ stdin.on( 'data', function( key ){
         process.exit();
     }
     // write the key to stdout all normal like
-    process.stdout.write( key );
+    // process.stdout.write( key );
     main.ports.get.send( key );
 
 });
@@ -42,4 +42,9 @@ main.ports.put.subscribe(
         process.stdout.write (data);
 });
 
-
+main.ports.quit.subscribe(
+    function (data){
+        process.stdout.write("\n");
+        process.stdout.write (data);
+        process.exit();
+});

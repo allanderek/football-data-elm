@@ -82,6 +82,11 @@ update msg model =
             FootballData.formatStandings standings
                 |> outputMessage model
 
+        Input "q" ->
+            "Goodbye."
+                |> Ports.quit
+                |> Return.withModel model
+
         Input "t" ->
             [ FootballData.getStandings Private.Key.key GetStandingsResponse
             ]
