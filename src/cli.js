@@ -36,6 +36,10 @@ stdin.on( 'data', function( key ){
 
 });
 
+process.stdout.on ('resize', function () {
+    main.ports.resize.send (process.stdout.rows);
+});
+
 main.ports.put.subscribe(
     function (data){
         clear_screen();

@@ -129,7 +129,10 @@ drawPage model =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Ports.get Input
+    [ Ports.get Input
+    , Ports.resize Resize
+    ]
+        |> Sub.batch
 
 
 type alias Model =
@@ -161,6 +164,7 @@ type alias ModelData =
 
 type Msg
     = Input String
+    | Resize Int
     | GetStandingsResponse (Http.Status FootballData.Table)
     | GetCompetitionsResponse (Http.Status FootballData.Competitions)
     | GetMatchesResponse (Http.Status FootballData.Matches)
@@ -185,6 +189,10 @@ updateCompetition moveI model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        Resize rows ->
+            { model | screenRows = rows }
+                |> outputPage
+
         GetStandingsResponse (Err error) ->
             let
                 message =
