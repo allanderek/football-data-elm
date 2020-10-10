@@ -1,9 +1,9 @@
 module Main exposing (main)
 
-import Helpers.Time as Time
 import FootballData
 import Helpers.Http as Http
 import Helpers.Return as Return
+import Helpers.Time as Time
 import Http
 import Json.Decode as Decode
 import List.Extra as List
@@ -120,21 +120,21 @@ drawPageContents model =
                 groups =
                     -- This isn't quite right, you don't want the 'dateTime' to be equal
                     -- but to be on the same date.
-                    List.gatherEqualsBy .utcDateTime model.data.matches
+                    List.gatherEqualsBy (.utcDateTime >> Time.getDate model.here) model.data.matches
 
-                showGroup (principal, others) =
+                showGroup ( principal, others ) =
                     let
                         header =
                             Time.formatDate model.here principal.utcDateTime
 
                         matchesTable =
                             (principal :: others)
-                                    |> Table.view
-                                        { columns = columns
-                                        , includeHeader = False
-                                        }
+                                |> Table.view
+                                    { columns = columns
+                                    , includeHeader = False
+                                    }
                     in
-                    header ::  matchesTable
+                    header :: matchesTable
 
                 showScore match =
                     [ match.score.home |> Maybe.map String.fromInt |> Maybe.withDefault ""
