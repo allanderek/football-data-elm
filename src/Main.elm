@@ -363,13 +363,36 @@ update msg model =
 
                                         ( principal, others ) :: rest ->
                                             let
-                                                isScheduled m =
-                                                    m.status == FootballData.Scheduled
+                                                isDesired m =
+                                                    case m.status of
+                                                        FootballData.Scheduled ->
+                                                            True
+
+                                                        FootballData.Playing ->
+                                                            True
+
+                                                        FootballData.Paused ->
+                                                            True
+
+                                                        FootballData.Postponed ->
+                                                            False
+
+                                                        FootballData.Cancelled ->
+                                                            False
+
+                                                        FootballData.Suspended ->
+                                                            False
+
+                                                        FootballData.Finished ->
+                                                            False
+
+                                                        FootballData.Awarded ->
+                                                            False
 
                                                 thisGroupMatches =
                                                     principal :: others
                                             in
-                                            case List.findIndex isScheduled thisGroupMatches of
+                                            case List.findIndex isDesired thisGroupMatches of
                                                 Nothing ->
                                                     let
                                                         groupSize =
