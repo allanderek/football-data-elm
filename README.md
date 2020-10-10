@@ -1,6 +1,6 @@
 # Experimental stuff
 
-This is probably not worthy of your time yet. It is an attempt to scratch two itches in one. Firstly I wanted a way to view football scores and tables in the terminal. Secondly I wanted to be able to use (Elm)[https://elm-lang.org/] to create terminal apps (Elm is designed for use in Web applications targetting the browser).
+This is probably not worthy of your time yet. It is an attempt to scratch two itches in one. Firstly I wanted a way to view football scores and tables in the terminal. Secondly I wanted to be able to use [Elm]( https://elm-lang.org/ ) to create terminal apps (Elm is designed for use in Web applications targetting the browser).
 
 # Status
 
@@ -9,7 +9,7 @@ It's working for me, there are definitely a few rough edges around the Elm-termi
 # Football-data.org
 
 This uses football-data.org for the scores and tables and basically all the data it ever gets.
-To actually use this you will need your own key, which you can get from (football-data)[https://www.football-data.org/].
+To actually use this you will need your own key, which you can get from [football-data](https://www.football-data.org/).
 Once you have your key you need to make a source file in `src/Private/Key.elm` that looks like:
 
 ```
