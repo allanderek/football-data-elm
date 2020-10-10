@@ -2,6 +2,7 @@ module Main exposing (main)
 
 import Color
 import FootballData
+import Format
 import Helpers.Http as Http
 import Helpers.Return as Return
 import Helpers.Time as Time
@@ -118,27 +119,31 @@ drawPageContents model =
                 formatSelected competition =
                     case competition.id == model.currentCompetition of
                         True ->
-                            "X"
+                            Format.Span
+                                [ Color.Bright
+                                , Color.FgGreen
+                                ]
+                                "X"
 
                         False ->
-                            ""
+                            Format.nothing
 
                 columns =
-                    [ { title = ""
+                    [ { title = Format.text ""
                       , justify = Justify.Centre
                       , fromRow = always formatSelected
                       }
-                    , { title = ""
+                    , { title = Format.text ""
                       , justify = Justify.Right
-                      , fromRow = \index _ -> index + 1 |> String.fromInt
+                      , fromRow = \index _ -> index + 1 |> String.fromInt |> Format.text
                       }
-                    , { title = "Region"
+                    , { title = Format.text "Region"
                       , justify = Justify.Left
-                      , fromRow = \_ r -> r.region
+                      , fromRow = \_ r -> r.region |> Format.text
                       }
-                    , { title = "Name"
+                    , { title = Format.text "Name"
                       , justify = Justify.Left
-                      , fromRow = \_ r -> r.name
+                      , fromRow = \_ r -> r.name |> Format.text
                       }
                     ]
             in
@@ -147,6 +152,7 @@ drawPageContents model =
                     { columns = columns
                     , includeHeader = True
                     }
+                |> List.map Format.format
                 |> String.join "\n"
 
         PageTable ->
@@ -163,7 +169,7 @@ drawPageContents model =
                     let
                         header =
                             Time.formatDate model.here principal.utcDateTime
-                                |> Color.color Color.Dim
+                                |> Format.Span [ Color.Dim ]
 
                         matchesTable =
                             (principal :: others)
@@ -186,45 +192,48 @@ drawPageContents model =
                     case match.status of
                         FootballData.Postponed ->
                             "POSP"
-                                |> Color.colors [ Color.FgRed, Color.Bright ]
+                                |> Format.Span [ Color.FgRed, Color.Bright ]
 
                         FootballData.Scheduled ->
                             Time.formatTime model.here match.utcDateTime
+                                |> Format.text
 
                         FootballData.Cancelled ->
                             "CANC"
-                                |> Color.colors [ Color.FgRed, Color.Bright ]
+                                |> Format.Span [ Color.FgRed, Color.Bright ]
 
                         FootballData.Suspended ->
                             "SUSP"
-                                |> Color.colors [ Color.FgRed, Color.Bright ]
+                                |> Format.Span [ Color.FgRed, Color.Bright ]
 
                         FootballData.Playing ->
                             score
-                                |> Color.colors [ Color.FgBlue, Color.Bright ]
+                                |> Format.Span [ Color.FgBlue, Color.Bright ]
 
                         FootballData.Paused ->
                             score
-                                |> Color.color Color.FgYellow
+                                |> Format.Span [ Color.FgYellow ]
 
                         FootballData.Finished ->
                             score
+                                |> Format.text
 
                         FootballData.Awarded ->
                             score
+                                |> Format.text
 
                 columns =
-                    [ { title = "Home"
+                    [ { title = Format.text "Home"
                       , justify = Justify.Right
-                      , fromRow = always .homeTeam
+                      , fromRow = \_ row -> row.homeTeam |> Format.text
                       }
-                    , { title = "Score"
+                    , { title = Format.text "Score"
                       , justify = Justify.Centre
                       , fromRow = always showScore
                       }
-                    , { title = "Away"
+                    , { title = Format.text "Away"
                       , justify = Justify.Left
-                      , fromRow = always .awayTeam
+                      , fromRow = \_ row -> row.awayTeam |> Format.text
                       }
                     ]
 
@@ -239,10 +248,11 @@ drawPageContents model =
                         |> List.take screenRows
 
                 justify =
-                    String.pad model.screenColumns ' '
+                    Justify.node Justify.Centre model.screenColumns
             in
             rowsToShow
                 |> List.map justify
+                |> List.map Format.format
                 |> String.join "\n"
 
 
@@ -435,70 +445,71 @@ formatStandings : FootballData.Table -> String
 formatStandings table =
     let
         integerFormat get _ row =
-            get row |> String.fromInt
+            -- TODO: Could color these red for negative etc.
+            get row |> String.fromInt |> Format.text
 
         showRes c =
             case c of
                 'W' ->
-                    Color.color Color.FgGreen "W"
+                    Format.Span [ Color.FgGreen ] "W"
 
                 'D' ->
-                    Color.color Color.FgYellow "D"
+                    Format.Span [ Color.FgYellow ] "D"
 
                 'L' ->
-                    Color.color Color.FgRed "L"
+                    Format.Span [ Color.FgRed ] "L"
 
                 _ ->
-                    String.fromChar c
+                    String.fromChar c |> Format.text
 
         showForm _ pos =
             pos.form
                 |> String.toList
                 |> List.map showRes
-                |> String.join ""
+                |> Format.Block
 
         columns =
-            [ { title = "P"
+            [ { title = Format.text "P"
               , justify = Justify.Right
-              , fromRow = \index _ -> index + 1 |> String.fromInt
+              , fromRow = \index _ -> index + 1 |> String.fromInt |> Format.text
               }
-            , { title = "Team"
+            , { title = Format.text "Team"
               , justify = Justify.Left
-              , fromRow = \_ r -> r.team.name
+              , fromRow = \_ r -> r.team.name |> Format.text
               }
-            , { title = "Pld"
+            , { title = Format.text "Pld"
               , justify = Justify.Right
               , fromRow = integerFormat .gamesPlayed
               }
-            , { title = "W"
+            , { title = Format.text "W"
               , justify = Justify.Right
               , fromRow = integerFormat .won
               }
-            , { title = "D"
+            , { title = Format.text "D"
               , justify = Justify.Right
               , fromRow = integerFormat .draw
               }
-            , { title = "L"
+            , { title = Format.text "L"
               , justify = Justify.Right
               , fromRow = integerFormat .lost
               }
-            , { title = "GF"
+            , { title = Format.text "GF"
               , justify = Justify.Right
               , fromRow = integerFormat .goalsFor
               }
-            , { title = "GA"
+            , { title = Format.text "GA"
               , justify = Justify.Right
               , fromRow = integerFormat .goalsAgainst
               }
-            , { title = "GD"
+            , { title = Format.text "GD"
               , justify = Justify.Right
               , fromRow = integerFormat .goalDifference
               }
-            , { title = "Pts"
+            , { title = Format.text "Pts"
               , justify = Justify.Right
               , fromRow = integerFormat .points
               }
-            , { title = "Form"
+            , { title = Format.text "Form"
               , justify = Justify.Right
               , fromRow = showForm
               }
@@ -509,4 +520,5 @@ formatStandings table =
             { columns = columns
             , includeHeader = True
             }
+        |> List.map Format.format
         |> String.join "\n"

@@ -1,14 +1,12 @@
 module Color exposing
-    ( Command(..)
+    ( Attribute(..)
     , color
     , colors
-    , command
     )
 
 
-type Command
-    = Reset
-    | Bright
+type Attribute
+    = Bright
     | Dim
     | Underscore
     | Blink
@@ -32,27 +30,29 @@ type Command
     | BgWhite
 
 
-colors : List Command -> String -> String
+resetCommand : String
+resetCommand =
+    "\u{001B}[0m"
+
+
+colors : List Attribute -> String -> String
 colors cs s =
-    [ List.map command cs
+    [ List.map attribute cs
         |> String.concat
     , s
-    , command Reset
+    , resetCommand
     ]
         |> String.concat
 
 
-color : Command -> String -> String
+color : Attribute -> String -> String
 color c =
     colors [ c ]
 
 
-command : Command -> String
-command c =
+attribute : Attribute -> String
+attribute c =
     case c of
-        Reset ->
-            "\u{001B}[0m"
-
         Bright ->
             "\u{001B}[1m"
 

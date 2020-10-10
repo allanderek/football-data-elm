@@ -3,16 +3,16 @@ module Table exposing
     , view
     )
 
-import List.Extra as List
+import Format
 import Justify exposing (Justify)
+import List.Extra as List
 
 
 type alias Column row =
-    { title : String
+    { title : Format.Node
     , justify : Justify
-    , fromRow : Int -> row -> String
+    , fromRow : Int -> row -> Format.Node
     }
-
 
 
 type alias Config row =
@@ -21,7 +21,7 @@ type alias Config row =
     }
 
 
-view : Config row -> List row -> List String
+view : Config row -> List row -> List Format.Node
 view config rows =
     let
         formatRow index row =
@@ -47,7 +47,7 @@ view config rows =
             let
                 sizeRow index row =
                     List.getAt index row
-                        |> Maybe.map String.length
+                        |> Maybe.map Format.length
                         |> Maybe.withDefault 0
 
                 longest index =
@@ -68,10 +68,14 @@ view config rows =
                             List.getAt index columnSizes
                                 |> Maybe.withDefault 0
                     in
-                    Justify.string column.justify longest rowCell
+                    Justify.node column.justify longest rowCell
             in
             List.zip config.columns row
                 |> List.indexedMap justifyColumn
+
+        joinRow row =
+            List.intersperse (Format.Span [] " ") row
+                |> Format.Block
     in
     List.map justifyRow unjustified
-        |> List.map (String.join " ")
+        |> List.map joinRow
