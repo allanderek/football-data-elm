@@ -148,6 +148,7 @@ drawPageContents model =
                     ]
             in
             model.data.competitions
+                |> List.map Table.NormalRow
                 |> Table.view
                     { columns = columns
                     , includeHeader = True
@@ -168,13 +169,11 @@ drawPageContents model =
                         header =
                             Time.formatDate model.here principal.utcDateTime
                                 |> Format.Span [ Color.Dim ]
+                                |> Table.BannerRow
 
                         matchesTable =
                             (principal :: others)
-                                |> Table.view
-                                    { columns = columns
-                                    , includeHeader = False
-                                    }
+                                |> List.map Table.NormalRow
                     in
                     header :: matchesTable
 
@@ -249,6 +248,10 @@ drawPageContents model =
                     Justify.node Justify.Centre model.screenColumns
             in
             rowsToShow
+                |> Table.view
+                    { includeHeader = False
+                    , columns = columns
+                    }
                 |> List.map justify
                 |> List.map Format.format
                 |> String.join "\n"
@@ -577,6 +580,7 @@ formatStandings table =
             ]
     in
     table
+        |> List.map Table.NormalRow
         |> Table.view
             { columns = columns
             , includeHeader = True

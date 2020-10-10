@@ -21,6 +21,11 @@ key =
     "your secret api key"
 ```
 
+# Matches scrolling
+
+Sometimes as you scroll the list of matches they appear to move slightly left/right. This is due to the fact that we only render the lines that are on the screen, so sometimes that changes the justification slightly. We could solve that by just *always* rendering *all* of the lines and *then* choosing which ones to display.
+
+Another option to optimise this, would be to render all the matches when we download them, and then we only have to pick out which ones to show each time we scroll. We would have to remember to re-render this 'memoised' list of matches stored on the model whenever there was a screen resize. At the moment the whole thing seems to run fast enough for me.
 
 # Todo
 
@@ -30,8 +35,9 @@ key =
 - [x] I'd like to know if a game is currently in progress or finished.
 - [x] It would be great if we could add a little colour, eg for games in progress.
 - [x] Add the 'form' to the table with colours
-- [ ] I'd like to properly justify the matches, to do this you will have to add 'info' rows to 'Table'
+- [x] I'd like to properly justify the matches, to do this you will have to add 'info' rows to 'Table'
 - [x] When we go to the matches if we could automatically scroll down to something like the current date. I did this easier, I just scroll down to the first 'SCHEDULED' match.
 - [ ] Document more the way this works with Elm and Node.tty
 - [ ] I should still get the *actual* timezone we're in, but that is going to be tricky because we normally use the webapi to get the timezone, might be a way around it with node.
 - [ ] Dates which are close to the current date should say something more human like, for example, on Monday-Friday of the week 12-16 of October 2020, rather than 17/10/2020 state 'Saturday'
+- [ ] Maybe have a working indicator, particular for when you refresh the current screen (by simply hitting the short cut for the current screen.
