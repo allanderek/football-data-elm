@@ -43,8 +43,8 @@ colors cs s =
 
 
 color : Command -> String -> String
-color cs =
-    colors [ cs ]
+color c =
+    colors [ c ]
 
 
 command : Command -> String

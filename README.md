@@ -7,4 +7,4 @@
 - [x] It would be great if we could add a little colour, eg for games in progress.
 - [ ] Add the 'form' to the table with colours
 - [ ] I'd like to properly justify the matches, to do this you will have to add 'info' rows to 'Table'
-
+- [ ] When we go to the matches if we could automatically scroll down to the something like the current date

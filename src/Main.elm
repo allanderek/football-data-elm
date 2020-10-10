@@ -437,6 +437,26 @@ formatStandings table =
         integerFormat get _ row =
             get row |> String.fromInt
 
+        showRes c =
+            case c of
+                'W' ->
+                    Color.color Color.FgGreen "W"
+
+                'D' ->
+                    Color.color Color.FgYellow "D"
+
+                'L' ->
+                    Color.color Color.FgRed "L"
+
+                _ ->
+                    String.fromChar c
+
+        showForm _ pos =
+            pos.form
+                |> String.toList
+                |> List.map showRes
+                |> String.join ""
+
         columns =
             [ { title = "P"
               , justify = Justify.Right
@@ -477,6 +497,10 @@ formatStandings table =
             , { title = "Pts"
               , justify = Justify.Right
               , fromRow = integerFormat .points
+              }
+            , { title = "Form"
+              , justify = Justify.Right
+              , fromRow = showForm
               }
             ]
     in
