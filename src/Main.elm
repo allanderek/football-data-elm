@@ -102,7 +102,11 @@ drawPageContents model =
                       }
                     ]
             in
-            Table.view columns model.data.competitions
+            model.data.competitions
+                |> Table.view
+                    { columns = columns
+                    , includeHeader = True
+                    }
 
         PageTable ->
             FootballData.formatStandings model.data.standings
@@ -138,7 +142,10 @@ drawPageContents model =
             model.data.matches
                 |> List.drop i
                 |> List.take screenRows
-                |> Table.view columns
+                |> Table.view
+                    { columns = columns
+                    , includeHeader = False
+                    }
 
 
 subscriptions : Model -> Sub Msg

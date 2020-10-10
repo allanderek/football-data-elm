@@ -169,7 +169,11 @@ formatStandings table =
               }
             ]
     in
-    Table.view columns table
+    table
+        |> Table.view
+            { columns = columns
+            , includeHeader = True
+            }
 
 
 type alias Competitions =

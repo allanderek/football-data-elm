@@ -21,18 +21,33 @@ type Justify
     | NoJustify
 
 
-view : List (Column row) -> List row -> String
-view columns rows =
-    let
-        headerRow =
-            List.map .title columns
+type alias Config row =
+    { includeHeader : Bool
+    , columns : List (Column row)
+    }
 
+
+view : Config row -> List row -> String
+view config rows =
+    let
         formatRow index row =
-            List.map (\c -> c.fromRow index row) columns
+            List.map (\c -> c.fromRow index row) config.columns
 
         unjustified =
-            List.indexedMap formatRow rows
-                |> (::) headerRow
+            let
+                contentRows =
+                    List.indexedMap formatRow rows
+            in
+            case config.includeHeader of
+                False ->
+                    contentRows
+
+                True ->
+                    let
+                        headerRow =
+                            List.map .title config.columns
+                    in
+                    headerRow :: contentRows
 
         columnSizes =
             let
@@ -47,7 +62,7 @@ view columns rows =
                         |> Maybe.withDefault 0
 
                 indexes =
-                    List.range 0 (List.length columns - 1)
+                    List.range 0 (List.length config.columns - 1)
             in
             List.map longest indexes
 
@@ -72,7 +87,7 @@ view columns rows =
                         CentreJustify ->
                             String.pad longest ' ' rowCell
             in
-            List.zip columns row
+            List.zip config.columns row
                 |> List.indexedMap justifyColumn
     in
     List.map justifyRow unjustified
