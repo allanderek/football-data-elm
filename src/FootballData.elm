@@ -14,10 +14,12 @@ module FootballData exposing
 import Helpers.Decode as Decode
 import Helpers.Http as Http
 import Http
+import Iso8601
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Extra as Decode
 import List.Extra as List
 import Table
+import Time
 
 
 type alias Team =
@@ -174,6 +176,7 @@ formatStandings table =
             { columns = columns
             , includeHeader = True
             }
+        |> String.join "\n"
 
 
 type alias Competitions =
@@ -223,6 +226,7 @@ type alias Match =
     { homeTeam : TeamName
     , awayTeam : TeamName
     , score : Score
+    , utcDateTime : Time.Posix
     }
 
 
@@ -245,6 +249,7 @@ getMatches key competitionId toMessage =
                 |> Decode.andFieldAt [ "homeTeam", "name" ] Decode.string
                 |> Decode.andFieldAt [ "awayTeam", "name" ] Decode.string
                 |> Decode.andFieldAt [ "score", "fullTime" ] scoreDecoder
+                |> Decode.andField "utcDate" Iso8601.decoder
     in
     { method = "GET"
     , headers = [ Http.header "X-Auth-Token" key ]

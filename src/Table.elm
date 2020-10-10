@@ -27,7 +27,7 @@ type alias Config row =
     }
 
 
-view : Config row -> List row -> String
+view : Config row -> List row -> List String
 view config rows =
     let
         formatRow index row =
@@ -92,4 +92,3 @@ view config rows =
     in
     List.map justifyRow unjustified
         |> List.map (String.join " ")
-        |> String.join "\n"

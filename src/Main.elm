@@ -1,5 +1,6 @@
 module Main exposing (main)
 
+import Helpers.Time as Time
 import FootballData
 import Helpers.Http as Http
 import Helpers.Return as Return
@@ -10,6 +11,7 @@ import Ports
 import Private.Key
 import ProgramFlags exposing (ProgramFlags)
 import Table
+import Time
 
 
 main : Program ProgramFlags Model Msg
@@ -36,7 +38,8 @@ outputPage model =
 
 init : ProgramFlags -> ( Model, Cmd Msg )
 init flags =
-    { page = PageMatches 0
+    { here = Time.utc
+    , page = PageMatches 0
     , data =
         { standings = []
         , competitions = []
@@ -107,12 +110,32 @@ drawPageContents model =
                     { columns = columns
                     , includeHeader = True
                     }
+                |> String.join "\n"
 
         PageTable ->
             FootballData.formatStandings model.data.standings
 
         PageMatches i ->
             let
+                groups =
+                    -- This isn't quite right, you don't want the 'dateTime' to be equal
+                    -- but to be on the same date.
+                    List.gatherEqualsBy .utcDateTime model.data.matches
+
+                showGroup (principal, others) =
+                    let
+                        header =
+                            Time.formatDate model.here principal.utcDateTime
+
+                        matchesTable =
+                            (principal :: others)
+                                    |> Table.view
+                                        { columns = columns
+                                        , includeHeader = False
+                                        }
+                    in
+                    header ::  matchesTable
+
                 showScore match =
                     [ match.score.home |> Maybe.map String.fromInt |> Maybe.withDefault ""
                     , " - "
@@ -138,14 +161,19 @@ drawPageContents model =
                 screenRows =
                     -- minus 1 is intended to be for the header
                     model.screenRows - 1
+
+                rowsToShow =
+                    List.map showGroup groups
+                        |> List.concat
+                        |> List.drop i
+                        |> List.take screenRows
+
+                justify =
+                    String.pad 70 ' '
             in
-            model.data.matches
-                |> List.drop i
-                |> List.take screenRows
-                |> Table.view
-                    { columns = columns
-                    , includeHeader = False
-                    }
+            rowsToShow
+                |> List.map justify
+                |> String.join "\n"
 
 
 subscriptions : Model -> Sub Msg
@@ -161,6 +189,7 @@ type alias Model =
     , page : Page
     , currentCompetition : FootballData.CompetitionId
     , screenRows : Int
+    , here : Time.Zone
     }
 
 
