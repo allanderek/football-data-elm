@@ -1,12 +1,12 @@
 module Main exposing (main)
 
-import Justify
 import FootballData
 import Helpers.Http as Http
 import Helpers.Return as Return
 import Helpers.Time as Time
 import Http
 import Json.Decode as Decode
+import Justify
 import List.Extra as List
 import Ports
 import Private.Key
@@ -15,8 +15,60 @@ import Table
 import Time
 
 
+type alias Model =
+    { data : ModelData
+    , page : Page
+    , currentCompetition : FootballData.CompetitionId
+    , screenRows : Int
+    , screenColumns : Int
+    , here : Time.Zone
+    }
+
+
+withData : ModelData -> Model -> Model
+withData data model =
+    { model | data = data }
+
+
+type Page
+    = PageCompetitions
+    | PageMatches Int
+    | PageTable
+
+
+type alias ModelData =
+    { standings : FootballData.Table
+    , competitions : FootballData.Competitions
+    , matches : FootballData.Matches
+    }
+
+
 main : Program ProgramFlags Model Msg
 main =
+    let
+        subscriptions _ =
+            [ Ports.get Input
+            , Ports.resize Resize
+            ]
+                |> Sub.batch
+
+        init flags =
+            { here = Time.utc
+            , page = PageMatches 0
+            , data =
+                { standings = []
+                , competitions = []
+                , matches = []
+                }
+            , currentCompetition = 2021
+            , screenRows =
+                ProgramFlags.decodeFlag flags 30 "rows" Decode.int
+            , screenColumns =
+                ProgramFlags.decodeFlag flags 30 "columns" Decode.int
+            }
+                |> gotoMatches
+                |> Return.combine outputPage
+    in
     Platform.worker
         { init = init
         , update = update
@@ -35,23 +87,6 @@ outputPage : Model -> ( Model, Cmd Msg )
 outputPage model =
     drawPage model
         |> outputMessage model
-
-
-init : ProgramFlags -> ( Model, Cmd Msg )
-init flags =
-    { here = Time.utc
-    , page = PageMatches 0
-    , data =
-        { standings = []
-        , competitions = []
-        , matches = []
-        }
-    , currentCompetition = 2021
-    , screenRows =
-        ProgramFlags.decodeFlag flags 30 "rows" Decode.int
-    }
-        |> gotoMatches
-        |> Return.combine outputPage
 
 
 drawPage : Model -> String
@@ -170,51 +205,16 @@ drawPageContents model =
                         |> List.take screenRows
 
                 justify =
-                    String.pad 70 ' '
+                    String.pad model.screenColumns ' '
             in
             rowsToShow
                 |> List.map justify
                 |> String.join "\n"
 
 
-subscriptions : Model -> Sub Msg
-subscriptions _ =
-    [ Ports.get Input
-    , Ports.resize Resize
-    ]
-        |> Sub.batch
-
-
-type alias Model =
-    { data : ModelData
-    , page : Page
-    , currentCompetition : FootballData.CompetitionId
-    , screenRows : Int
-    , here : Time.Zone
-    }
-
-
-withData : ModelData -> Model -> Model
-withData data model =
-    { model | data = data }
-
-
-type Page
-    = PageCompetitions
-    | PageMatches Int
-    | PageTable
-
-
-type alias ModelData =
-    { standings : FootballData.Table
-    , competitions : FootballData.Competitions
-    , matches : FootballData.Matches
-    }
-
-
 type Msg
     = Input String
-    | Resize Int
+    | Resize Decode.Value
     | GetStandingsResponse (Http.Status FootballData.Table)
     | GetCompetitionsResponse (Http.Status FootballData.Competitions)
     | GetMatchesResponse (Http.Status FootballData.Matches)
@@ -251,8 +251,16 @@ gotoTable model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Resize rows ->
-            { model | screenRows = rows }
+        Resize value ->
+            let
+                get default fieldName =
+                    Decode.decodeValue (Decode.field fieldName Decode.int) value
+                        |> Result.withDefault default
+            in
+            { model
+                | screenRows = get model.screenRows "rows"
+                , screenColumns = get model.screenColumns "columns"
+            }
                 |> outputPage
 
         GetStandingsResponse (Err error) ->

@@ -5,8 +5,10 @@ port module Ports exposing
     , resize
     )
 
+import Json.Decode exposing (Value)
 
-port resize : (Int -> msg) -> Sub msg
+
+port resize : (Value -> msg) -> Sub msg
 
 
 port get : (String -> msg) -> Sub msg

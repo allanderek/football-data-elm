@@ -20,8 +20,17 @@ var clear_screen = function () {
     process.stdout.clearScreenDown();
 };
 
+var get_screen_dimensions = function () {
+    var result =
+        { 'rows' : process.stdout.rows,
+          'columns': process.stdout.columns
+        }
+    return result;
+}
+
+
 clear_screen();
-var main = Elm.Main.init( { flags: { 'rows': process.stdout.rows } }) ;
+var main = Elm.Main.init( { flags: get_screen_dimensions() }) ;
 
 
 // on any data into stdin
@@ -37,7 +46,7 @@ stdin.on( 'data', function( key ){
 });
 
 process.stdout.on ('resize', function () {
-    main.ports.resize.send (process.stdout.rows);
+    main.ports.resize.send (get_screen_dimensions());
 });
 
 main.ports.put.subscribe(
