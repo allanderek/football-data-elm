@@ -179,23 +179,35 @@ drawPageContents model =
 
                 showScore match =
                     let
+                        showNumber mI =
+                            -- We pad this
+                            mI |> Maybe.map String.fromInt |> Maybe.withDefault ""
+
                         score =
-                            [ match.score.home |> Maybe.map String.fromInt |> Maybe.withDefault ""
+                            [ match.score.home |> showNumber |> String.padLeft 2 ' '
                             , " - "
-                            , match.score.away |> Maybe.map String.fromInt |> Maybe.withDefault ""
+                            , match.score.away |> showNumber |> String.padRight 2 ' '
                             ]
                                 |> String.concat
                     in
                     case match.status of
-                        -- Note: The scores are generally 5 characters 0 - 0, but if you double figure score
-                        -- then of course it's more. However what that means is that the 'word' statuses are
-                        -- better as odd numbered characters since then the centre justify better.
+                        -- Note: The scores are 7 characters. Generally they are 5 character eg "0 - 0"
+                        -- so we pad them on either side just to give a bit more space *and* to allow for a
+                        -- double digit score, eg 10 - 0.
+                        -- then of course it's more.
+                        -- So that means that the 'word' statuses are better being odd-numbered characters since
+                        -- it means they will centre justify better.
                         FootballData.Postponed ->
                             "PSTPD"
                                 |> Format.Span [ Color.FgRed, Color.Bright ]
 
                         FootballData.Scheduled ->
                             Time.formatTime model.here match.utcDateTime
+                                -- We get a mild bit of jankiness when you are viewing *only* matches with 'time'
+                                -- scores and scroll up so that you suddenly view a match with a score, because
+                                -- the time status would be 5 characters but the score ones are 7 characters.
+                                -- This would not be needed if we always rendered *all* the matches.
+                                |> String.pad 7 ' '
                                 |> Format.text
 
                         FootballData.Cancelled ->
