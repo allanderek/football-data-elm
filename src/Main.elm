@@ -1,5 +1,6 @@
 module Main exposing (main)
 
+import Color
 import FootballData
 import Helpers.Http as Http
 import Helpers.Return as Return
@@ -162,6 +163,7 @@ drawPageContents model =
                     let
                         header =
                             Time.formatDate model.here principal.utcDateTime
+                                |> Color.color Color.Dim
 
                         matchesTable =
                             (principal :: others)
@@ -184,21 +186,26 @@ drawPageContents model =
                     case match.status of
                         FootballData.Postponed ->
                             "POSP"
+                                |> Color.colors [ Color.FgRed, Color.Bright ]
 
                         FootballData.Scheduled ->
                             Time.formatTime model.here match.utcDateTime
 
                         FootballData.Cancelled ->
                             "CANC"
+                                |> Color.colors [ Color.FgRed, Color.Bright ]
 
                         FootballData.Suspended ->
                             "SUSP"
+                                |> Color.colors [ Color.FgRed, Color.Bright ]
 
                         FootballData.Playing ->
                             score
+                                |> Color.colors [ Color.FgBlue, Color.Bright ]
 
                         FootballData.Paused ->
                             score
+                                |> Color.color Color.FgYellow
 
                         FootballData.Finished ->
                             score
