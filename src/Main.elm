@@ -219,10 +219,36 @@ drawPageContents model =
                             score
                                 |> Format.text
 
+                formatLoser s =
+                    s |> Format.text
+
+                formatDrawer s =
+                    s |> Format.text
+
+                formatWinner s =
+                    s |> Format.Span [ Color.Bright ]
+
+                formatTeamName name score otherScore =
+                    case compare (Maybe.withDefault 0 score) (Maybe.withDefault 0 otherScore) of
+                        LT ->
+                            formatLoser name
+
+                        EQ ->
+                            formatDrawer name
+
+                        GT ->
+                            formatWinner name
+
+                formatHomeTeam match =
+                    formatTeamName match.homeTeam match.score.home match.score.away
+
+                formatAwayTeam match =
+                    formatTeamName match.awayTeam match.score.away match.score.home
+
                 columns =
                     [ { title = Format.text "Home"
                       , justify = Justify.Right
-                      , fromRow = \_ row -> row.homeTeam |> Format.text
+                      , fromRow = always formatHomeTeam
                       }
                     , { title = Format.text "Score"
                       , justify = Justify.Centre
@@ -230,7 +256,7 @@ drawPageContents model =
                       }
                     , { title = Format.text "Away"
                       , justify = Justify.Left
-                      , fromRow = \_ row -> row.awayTeam |> Format.text
+                      , fromRow = always formatAwayTeam
                       }
                     ]
 
