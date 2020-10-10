@@ -36,7 +36,7 @@ outputPage model =
 
 init : ProgramFlags -> ( Model, Cmd Msg )
 init flags =
-    { page = PageWelcome
+    { page = PageMatches 0
     , data =
         { standings = []
         , competitions = []
@@ -46,19 +46,33 @@ init flags =
     , screenRows =
         ProgramFlags.decodeFlag flags 30 "rows" Decode.int
     }
-        |> outputPage
+        |> gotoMatches
+        |> Return.combine outputPage
 
 
 drawPage : Model -> String
 drawPage model =
-    case model.page of
-        PageWelcome ->
-            [ "Press 't' for table."
-            , "Press 'c' for competitions."
-            , "Press 'm' for matches"
-            ]
-                |> String.join "\n"
+    let
+        header =
+            "(t)able, (m)atches, (c)ompetitions, (j)up, (k)down"
 
+        contentSpace =
+            model.screenRows
+                - 1
+                |> max 0
+
+        pageContents =
+            drawPageContents { model | screenRows = contentSpace }
+    in
+    [ header
+    , pageContents
+    ]
+        |> String.join "\n"
+
+
+drawPageContents : Model -> String
+drawPageContents model =
+    case model.page of
         PageCompetitions ->
             let
                 formatSelected competition =
@@ -149,8 +163,7 @@ withData data model =
 
 
 type Page
-    = PageWelcome
-    | PageCompetitions
+    = PageCompetitions
     | PageMatches Int
     | PageTable
 
@@ -184,6 +197,18 @@ updateCompetition moveI model =
                 |> Maybe.withDefault model.currentCompetition
     in
     { model | currentCompetition = newCompetitionId }
+
+
+gotoMatches : Model -> ( Model, Cmd Msg )
+gotoMatches model =
+    FootballData.getMatches Private.Key.key model.currentCompetition GetMatchesResponse
+        |> Return.withModel { model | page = PageMatches 0 }
+
+
+gotoTable : Model -> ( Model, Cmd Msg )
+gotoTable model =
+    FootballData.getStandings Private.Key.key model.currentCompetition GetStandingsResponse
+        |> Return.withModel { model | page = PageTable }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -263,20 +288,15 @@ update msg model =
                 |> Return.withModel { model | page = PageCompetitions }
 
         Input "t" ->
-            FootballData.getStandings Private.Key.key model.currentCompetition GetStandingsResponse
-                |> Return.withModel { model | page = PageTable }
+            gotoTable model
 
         Input "m" ->
-            FootballData.getMatches Private.Key.key model.currentCompetition GetMatchesResponse
-                |> Return.withModel { model | page = PageMatches 0 }
+            gotoMatches model
 
         Input "j" ->
             let
                 newModel =
                     case model.page of
-                        PageWelcome ->
-                            model
-
                         PageTable ->
                             model
 
@@ -302,9 +322,6 @@ update msg model =
             let
                 newModel =
                     case model.page of
-                        PageWelcome ->
-                            model
-
                         PageTable ->
                             model
 
