@@ -5,7 +5,6 @@ module FootballData exposing
     , Match
     , Matches
     , Table
-    , formatStandings
     , getCompetitions
     , getMatches
     , getStandings
@@ -122,61 +121,6 @@ getStandings key competitionId toMessage =
         |> Http.request
 
 
-formatStandings : Table -> String
-formatStandings table =
-    let
-        integerFormat get _ row =
-            get row |> String.fromInt
-
-        columns =
-            [ { title = "P"
-              , justify = Table.RightJustify
-              , fromRow = \index _ -> index + 1 |> String.fromInt
-              }
-            , { title = "Team"
-              , justify = Table.LeftJustify
-              , fromRow = \_ r -> r.team.name
-              }
-            , { title = "Pld"
-              , justify = Table.RightJustify
-              , fromRow = integerFormat .gamesPlayed
-              }
-            , { title = "W"
-              , justify = Table.RightJustify
-              , fromRow = integerFormat .won
-              }
-            , { title = "D"
-              , justify = Table.RightJustify
-              , fromRow = integerFormat .draw
-              }
-            , { title = "L"
-              , justify = Table.RightJustify
-              , fromRow = integerFormat .lost
-              }
-            , { title = "GF"
-              , justify = Table.RightJustify
-              , fromRow = integerFormat .goalsFor
-              }
-            , { title = "GA"
-              , justify = Table.RightJustify
-              , fromRow = integerFormat .goalsAgainst
-              }
-            , { title = "GD"
-              , justify = Table.RightJustify
-              , fromRow = integerFormat .goalDifference
-              }
-            , { title = "Pts"
-              , justify = Table.RightJustify
-              , fromRow = integerFormat .points
-              }
-            ]
-    in
-    table
-        |> Table.view
-            { columns = columns
-            , includeHeader = True
-            }
-        |> String.join "\n"
 
 
 type alias Competitions =

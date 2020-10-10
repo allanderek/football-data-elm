@@ -1,5 +1,6 @@
 module Main exposing (main)
 
+import Justify
 import FootballData
 import Helpers.Http as Http
 import Helpers.Return as Return
@@ -88,19 +89,19 @@ drawPageContents model =
 
                 columns =
                     [ { title = ""
-                      , justify = Table.CentreJustify
+                      , justify = Justify.Centre
                       , fromRow = always formatSelected
                       }
                     , { title = ""
-                      , justify = Table.RightJustify
+                      , justify = Justify.Right
                       , fromRow = \index _ -> index + 1 |> String.fromInt
                       }
                     , { title = "Region"
-                      , justify = Table.LeftJustify
+                      , justify = Justify.Left
                       , fromRow = \_ r -> r.region
                       }
                     , { title = "Name"
-                      , justify = Table.LeftJustify
+                      , justify = Justify.Left
                       , fromRow = \_ r -> r.name
                       }
                     ]
@@ -113,7 +114,7 @@ drawPageContents model =
                 |> String.join "\n"
 
         PageTable ->
-            FootballData.formatStandings model.data.standings
+            formatStandings model.data.standings
 
         PageMatches i ->
             let
@@ -145,15 +146,15 @@ drawPageContents model =
 
                 columns =
                     [ { title = "Home"
-                      , justify = Table.RightJustify
+                      , justify = Justify.Right
                       , fromRow = always .homeTeam
                       }
                     , { title = "Score"
-                      , justify = Table.CentreJustify
+                      , justify = Justify.Centre
                       , fromRow = always showScore
                       }
                     , { title = "Away"
-                      , justify = Table.LeftJustify
+                      , justify = Justify.Left
                       , fromRow = always .awayTeam
                       }
                     ]
@@ -386,3 +387,60 @@ update msg model =
             ]
                 |> String.concat
                 |> outputMessage model
+
+
+formatStandings : FootballData.Table -> String
+formatStandings table =
+    let
+        integerFormat get _ row =
+            get row |> String.fromInt
+
+        columns =
+            [ { title = "P"
+              , justify = Justify.Right
+              , fromRow = \index _ -> index + 1 |> String.fromInt
+              }
+            , { title = "Team"
+              , justify = Justify.Left
+              , fromRow = \_ r -> r.team.name
+              }
+            , { title = "Pld"
+              , justify = Justify.Right
+              , fromRow = integerFormat .gamesPlayed
+              }
+            , { title = "W"
+              , justify = Justify.Right
+              , fromRow = integerFormat .won
+              }
+            , { title = "D"
+              , justify = Justify.Right
+              , fromRow = integerFormat .draw
+              }
+            , { title = "L"
+              , justify = Justify.Right
+              , fromRow = integerFormat .lost
+              }
+            , { title = "GF"
+              , justify = Justify.Right
+              , fromRow = integerFormat .goalsFor
+              }
+            , { title = "GA"
+              , justify = Justify.Right
+              , fromRow = integerFormat .goalsAgainst
+              }
+            , { title = "GD"
+              , justify = Justify.Right
+              , fromRow = integerFormat .goalDifference
+              }
+            , { title = "Pts"
+              , justify = Justify.Right
+              , fromRow = integerFormat .points
+              }
+            ]
+    in
+    table
+        |> Table.view
+            { columns = columns
+            , includeHeader = True
+            }
+        |> String.join "\n"

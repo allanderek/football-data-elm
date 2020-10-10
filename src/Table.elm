@@ -1,10 +1,10 @@
 module Table exposing
     ( Column
-    , Justify(..)
     , view
     )
 
 import List.Extra as List
+import Justify exposing (Justify)
 
 
 type alias Column row =
@@ -13,12 +13,6 @@ type alias Column row =
     , fromRow : Int -> row -> String
     }
 
-
-type Justify
-    = LeftJustify
-    | RightJustify
-    | CentreJustify
-    | NoJustify
 
 
 type alias Config row =
@@ -74,18 +68,7 @@ view config rows =
                             List.getAt index columnSizes
                                 |> Maybe.withDefault 0
                     in
-                    case column.justify of
-                        NoJustify ->
-                            rowCell
-
-                        RightJustify ->
-                            String.padLeft longest ' ' rowCell
-
-                        LeftJustify ->
-                            String.padRight longest ' ' rowCell
-
-                        CentreJustify ->
-                            String.pad longest ' ' rowCell
+                    Justify.string column.justify longest rowCell
             in
             List.zip config.columns row
                 |> List.indexedMap justifyColumn
