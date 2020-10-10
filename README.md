@@ -31,5 +31,7 @@ key =
 - [x] It would be great if we could add a little colour, eg for games in progress.
 - [x] Add the 'form' to the table with colours
 - [ ] I'd like to properly justify the matches, to do this you will have to add 'info' rows to 'Table'
-- [ ] When we go to the matches if we could automatically scroll down to the something like the current date
+- [x] When we go to the matches if we could automatically scroll down to something like the current date. I did this easier, I just scroll down to the first 'SCHEDULED' match.
 - [ ] Document more the way this works with Elm and Node.tty
+- [ ] I should still get the *actual* timezone we're in, but that is going to be tricky because we normally use the webapi to get the timezone, might be a way around it with node.
+- [ ] Dates which are close to the current date should say something more human like, for example, on Monday-Friday of the week 12-16 of October 2020, rather than 17/10/2020 state 'Saturday'

@@ -9,10 +9,12 @@ module FootballData exposing
     , getCompetitions
     , getMatches
     , getStandings
+    , groupMatchesByDate
     )
 
 import Helpers.Decode as Decode
 import Helpers.Http as Http
+import Helpers.Time as Time
 import Http
 import Iso8601
 import Json.Decode as Decode exposing (Decoder)
@@ -188,6 +190,11 @@ type alias Score =
     { home : Maybe Int
     , away : Maybe Int
     }
+
+
+groupMatchesByDate : Time.Zone -> List Match -> List ( Match, List Match )
+groupMatchesByDate zone matches =
+    List.gatherEqualsBy (.utcDateTime >> Time.getDate zone) matches
 
 
 getMatches : String -> CompetitionId -> (Http.Status Matches -> msg) -> Cmd msg

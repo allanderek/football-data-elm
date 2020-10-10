@@ -161,9 +161,7 @@ drawPageContents model =
         PageMatches i ->
             let
                 groups =
-                    -- This isn't quite right, you don't want the 'dateTime' to be equal
-                    -- but to be on the same date.
-                    List.gatherEqualsBy (.utcDateTime >> Time.getDate model.here) model.data.matches
+                    FootballData.groupMatchesByDate model.here model.data.matches
 
                 showGroup ( principal, others ) =
                     let
@@ -351,8 +349,48 @@ update msg model =
             let
                 data =
                     model.data
+
+                newPage =
+                    case model.page of
+                        PageMatches 0 ->
+                            let
+                                scroll x groups =
+                                    case groups of
+                                        [] ->
+                                            -- So in this case we got here without seeing a scheduled match
+                                            -- so we basically just want to scroll to the bottom.
+                                            max 0 (x - model.screenRows)
+
+                                        ( principal, others ) :: rest ->
+                                            let
+                                                isScheduled m =
+                                                    m.status == FootballData.Scheduled
+
+                                                thisGroupMatches =
+                                                    principal :: others
+                                            in
+                                            case List.findIndex isScheduled thisGroupMatches of
+                                                Nothing ->
+                                                    let
+                                                        groupSize =
+                                                            List.length thisGroupMatches
+                                                    in
+                                                    -- The plus one is for the data header
+                                                    scroll (x + 1 + groupSize) rest
+
+                                                Just i ->
+                                                    -- Note: no + 1 here, because we *want* this group's header
+                                                    -- to be included.
+                                                    x + i
+                            in
+                            FootballData.groupMatchesByDate model.here matches
+                                |> scroll 0
+                                |> PageMatches
+
+                        current ->
+                            current
             in
-            model
+            { model | page = newPage }
                 |> withData { data | matches = matches }
                 |> outputPage
 
