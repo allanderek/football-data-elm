@@ -187,8 +187,11 @@ drawPageContents model =
                                 |> String.concat
                     in
                     case match.status of
+                        -- Note: The scores are generally 5 characters 0 - 0, but if you double figure score
+                        -- then of course it's more. However what that means is that the 'word' statuses are
+                        -- better as odd numbered characters since then the centre justify better.
                         FootballData.Postponed ->
-                            "POSP"
+                            "PSTPD"
                                 |> Format.Span [ Color.FgRed, Color.Bright ]
 
                         FootballData.Scheduled ->
@@ -196,11 +199,11 @@ drawPageContents model =
                                 |> Format.text
 
                         FootballData.Cancelled ->
-                            "CANC"
+                            "CNCLD"
                                 |> Format.Span [ Color.FgRed, Color.Bright ]
 
                         FootballData.Suspended ->
-                            "SUSP"
+                            "SUSPD"
                                 |> Format.Span [ Color.FgRed, Color.Bright ]
 
                         FootballData.Playing ->
