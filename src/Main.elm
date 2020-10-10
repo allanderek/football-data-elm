@@ -206,11 +206,11 @@ drawPageContents model =
 
                         FootballData.Playing ->
                             score
-                                |> Format.Span [ Color.FgBlue, Color.Bright ]
+                                |> Format.Span [ Color.FgYellow, Color.Bright ]
 
                         FootballData.Paused ->
                             score
-                                |> Format.Span [ Color.FgYellow ]
+                                |> Format.Span [ Color.FgBlue, Color.Bright ]
 
                         FootballData.Finished ->
                             score
