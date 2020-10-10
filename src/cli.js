@@ -53,6 +53,7 @@ main.ports.put.subscribe(
     function (data){
         clear_screen();
         process.stdout.write (data);
+        process.stdout.cursorTo(process.stdout.columns, process.stdout.rows);
 });
 
 main.ports.quit.subscribe(
