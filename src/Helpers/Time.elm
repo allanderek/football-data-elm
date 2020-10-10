@@ -1,5 +1,6 @@
 module Helpers.Time exposing
     ( formatDate
+    , formatTime
     , getDate
     , toEnglishMonth
     , toIntMonth
@@ -107,3 +108,11 @@ formatDate zone posix =
     , date.day |> String.fromInt |> String.padLeft 2 '0'
     ]
         |> String.join "/"
+
+
+formatTime : Zone -> Posix -> String
+formatTime zone posix =
+    [ Time.toHour zone posix |> String.fromInt |> String.padLeft 2 '0'
+    , Time.toMinute zone posix |> String.fromInt |> String.padLeft 2 '0'
+    ]
+        |> String.join ":"

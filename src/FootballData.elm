@@ -3,6 +3,7 @@ module FootballData exposing
     , CompetitionId
     , Competitions
     , Match
+    , MatchStatus(..)
     , Matches
     , Table
     , getCompetitions
@@ -17,7 +18,6 @@ import Iso8601
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Extra as Decode
 import List.Extra as List
-import Table
 import Time
 
 
@@ -121,8 +121,6 @@ getStandings key competitionId toMessage =
         |> Http.request
 
 
-
-
 type alias Competitions =
     List Competition
 
@@ -171,7 +169,19 @@ type alias Match =
     , awayTeam : TeamName
     , score : Score
     , utcDateTime : Time.Posix
+    , status : MatchStatus
     }
+
+
+type MatchStatus
+    = Postponed
+    | Scheduled
+    | Cancelled
+    | Suspended
+    | Playing
+    | Paused
+    | Finished
+    | Awarded
 
 
 type alias Score =
@@ -188,12 +198,42 @@ getMatches key competitionId toMessage =
                 |> Decode.andField "homeTeam" (Decode.maybe Decode.int)
                 |> Decode.andField "awayTeam" (Decode.maybe Decode.int)
 
+        statusInterpreter s =
+            case s of
+                "POSTPONED" ->
+                    Decode.succeed Postponed
+
+                "SCHEDULED" ->
+                    Decode.succeed Scheduled
+
+                "CANCELLED" ->
+                    Decode.succeed Cancelled
+
+                "SUSPENDED" ->
+                    Decode.succeed Suspended
+
+                "IN_PLAY" ->
+                    Decode.succeed Playing
+
+                "PAUSED" ->
+                    Decode.succeed Paused
+
+                "FINISHED" ->
+                    Decode.succeed Finished
+
+                "AWARDED" ->
+                    Decode.succeed Awarded
+
+                _ ->
+                    Decode.fail (String.append "Unrecognised status: " s)
+
         matchDecoder =
             Decode.succeed Match
                 |> Decode.andFieldAt [ "homeTeam", "name" ] Decode.string
                 |> Decode.andFieldAt [ "awayTeam", "name" ] Decode.string
                 |> Decode.andFieldAt [ "score", "fullTime" ] scoreDecoder
                 |> Decode.andField "utcDate" Iso8601.decoder
+                |> Decode.andField "status" (Decode.string |> Decode.andThen statusInterpreter)
     in
     { method = "GET"
     , headers = [ Http.header "X-Auth-Token" key ]

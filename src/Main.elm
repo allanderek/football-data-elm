@@ -173,11 +173,38 @@ drawPageContents model =
                     header :: matchesTable
 
                 showScore match =
-                    [ match.score.home |> Maybe.map String.fromInt |> Maybe.withDefault ""
-                    , " - "
-                    , match.score.away |> Maybe.map String.fromInt |> Maybe.withDefault ""
-                    ]
-                        |> String.concat
+                    let
+                        score =
+                            [ match.score.home |> Maybe.map String.fromInt |> Maybe.withDefault ""
+                            , " - "
+                            , match.score.away |> Maybe.map String.fromInt |> Maybe.withDefault ""
+                            ]
+                                |> String.concat
+                    in
+                    case match.status of
+                        FootballData.Postponed ->
+                            "POSP"
+
+                        FootballData.Scheduled ->
+                            Time.formatTime model.here match.utcDateTime
+
+                        FootballData.Cancelled ->
+                            "CANC"
+
+                        FootballData.Suspended ->
+                            "SUSP"
+
+                        FootballData.Playing ->
+                            score
+
+                        FootballData.Paused ->
+                            score
+
+                        FootballData.Finished ->
+                            score
+
+                        FootballData.Awarded ->
+                            score
 
                 columns =
                     [ { title = "Home"
