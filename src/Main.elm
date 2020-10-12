@@ -45,6 +45,20 @@ type alias ModelData =
     }
 
 
+presetKnownCompetitionIds :
+    { epl : FootballData.CompetitionId
+    , laliga : FootballData.CompetitionId
+    , bundesliga : FootballData.CompetitionId
+    , seriea : FootballData.CompetitionId
+    }
+presetKnownCompetitionIds =
+    { epl = 2021
+    , laliga = 2014
+    , bundesliga = 2002
+    , seriea = 2019
+    }
+
+
 main : Program ProgramFlags Model Msg
 main =
     let
@@ -62,7 +76,7 @@ main =
                 , competitions = []
                 , matches = []
                 }
-            , currentCompetition = 2021
+            , currentCompetition = presetKnownCompetitionIds.epl
             , screenRows =
                 ProgramFlags.decodeFlag flags 30 "rows" Decode.int
             , screenColumns =
@@ -94,8 +108,28 @@ outputPage model =
 drawPage : Model -> String
 drawPage model =
     let
+        keySpan =
+            Format.Span [ Color.Underscore ]
+
+        normal =
+            Format.Span []
+
         header =
-            "(t)able, (m)atches, (c)ompetitions, (j)up, (k)down"
+            [ [ keySpan "t", normal "able" ]
+            , [ keySpan "m", normal "atches" ]
+            , [ keySpan "c", normal "ompetitions" ]
+            , [ keySpan "j", normal "up" ]
+            , [ keySpan "k", normal "down" ]
+            , [ normal "e", keySpan "p", normal "l" ]
+            , [ keySpan "l", normal "aliga" ]
+            , [ keySpan "b", normal "undesliga" ]
+            , [ keySpan "s", normal "eriea" ]
+            ]
+                |> List.map Format.Block
+                |> List.intersperse (normal ", ")
+                |> Format.Block
+                |> Justify.node Justify.Centre model.screenColumns
+                |> Format.format
 
         contentSpace =
             model.screenRows
@@ -322,6 +356,23 @@ updateCompetition moveI model =
     { model | currentCompetition = newCompetitionId }
 
 
+presetCompetition : FootballData.CompetitionId -> Model -> ( Model, Cmd Msg )
+presetCompetition newCompetitionId model =
+    let
+        newModel =
+            { model | currentCompetition = newCompetitionId }
+    in
+    case model.page of
+        PageCompetitions ->
+            Return.noCommand newModel
+
+        PageMatches _ ->
+            newModel |> gotoMatches
+
+        PageTable ->
+            newModel |> gotoTable
+
+
 gotoMatches : Model -> ( Model, Cmd Msg )
 gotoMatches model =
     FootballData.getMatches Private.Key.key model.currentCompetition GetMatchesResponse
@@ -486,6 +537,18 @@ update msg model =
 
         Input "m" ->
             gotoMatches model
+
+        Input "p" ->
+            presetCompetition presetKnownCompetitionIds.epl model
+
+        Input "l" ->
+            presetCompetition presetKnownCompetitionIds.laliga model
+
+        Input "b" ->
+            presetCompetition presetKnownCompetitionIds.bundesliga model
+
+        Input "s" ->
+            presetCompetition presetKnownCompetitionIds.seriea model
 
         Input "j" ->
             let
