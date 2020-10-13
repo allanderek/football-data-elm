@@ -59,15 +59,8 @@ node justify width inputNode =
 
         Centre ->
             let
-                padRequired =
-                    width - currentLength
-
-                left =
-                    padRequired // 2
-
-                right =
-                    -- So if it is an odd number the extra part will go on the right.
-                    padRequired - left
+                ( left, right ) =
+                    splitPadding currentLength width
             in
             [ pad left
             , inputNode
@@ -103,18 +96,27 @@ vertical justify height empty lines =
 
         Centre ->
             let
-                padRequired =
-                    height - currentHeight
-
-                upper =
-                    padRequired // 2
-
-                lower =
-                    -- So if it is an odd number the extra part will go on the right.
-                    padRequired - upper
+                ( upper, lower ) =
+                    splitPadding currentHeight height
             in
             [ pad upper
             , lines
             , pad lower
             ]
                 |> List.concat
+
+
+splitPadding : Int -> Int -> ( Int, Int )
+splitPadding currentSize desiredSize =
+    let
+        padRequired =
+            desiredSize - currentSize
+
+        prior =
+            padRequired // 2
+
+        post =
+            -- So if it is an odd number the extra part will go on the right.
+            padRequired - prior
+    in
+    ( prior, post )
