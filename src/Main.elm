@@ -145,6 +145,15 @@ drawPage model =
         |> String.join "\n"
 
 
+centreJustifyScreen : { a | screenColumns : Int } -> List Format.Node -> List Format.Node
+centreJustifyScreen model nodes =
+    let
+        justify =
+            Justify.node Justify.Centre model.screenColumns
+    in
+    List.map justify nodes
+
+
 drawPageContents : Model -> String
 drawPageContents model =
     case model.page of
@@ -187,11 +196,15 @@ drawPageContents model =
                     { columns = columns
                     , includeHeader = True
                     }
+                |> centreJustifyScreen model
                 |> List.map Format.format
                 |> String.join "\n"
 
         PageTable ->
             formatStandings model.data.standings
+                |> centreJustifyScreen model
+                |> List.map Format.format
+                |> String.join "\n"
 
         PageMatches i ->
             let
@@ -609,7 +622,7 @@ update msg model =
                 |> outputMessage model
 
 
-formatStandings : FootballData.Table -> String
+formatStandings : FootballData.Table -> List Format.Node
 formatStandings table =
     let
         integerFormat get _ row =
@@ -690,5 +703,3 @@ formatStandings table =
             { columns = columns
             , includeHeader = True
             }
-        |> List.map Format.format
-        |> String.join "\n"
