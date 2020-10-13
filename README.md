@@ -41,3 +41,4 @@ Another option to optimise this, would be to render all the matches when we down
 - [ ] I should still get the *actual* timezone we're in, but that is going to be tricky because we normally use the webapi to get the timezone, might be a way around it with node.
 - [ ] Dates which are close to the current date should say something more human like, for example, on Monday-Friday of the week 12-16 of October 2020, rather than 17/10/2020 state 'Saturday'
 - [ ] Maybe have a working indicator, particular for when you refresh the current screen (by simply hitting the short cut for the current screen.
+- [ ] Tables for the UCL, there is more than one and we should display them all.
