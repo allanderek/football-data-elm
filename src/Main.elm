@@ -145,13 +145,14 @@ drawPage model =
         |> String.join "\n"
 
 
-centreJustifyScreen : { a | screenColumns : Int } -> List Format.Node -> List Format.Node
+centreJustifyScreen : { a | screenColumns : Int, screenRows : Int } -> List Format.Node -> List Format.Node
 centreJustifyScreen model nodes =
     let
         justify =
             Justify.node Justify.Centre model.screenColumns
     in
     List.map justify nodes
+        |> Justify.vertical Justify.Centre model.screenRows Format.nothing
 
 
 drawPageContents : Model -> String
@@ -331,16 +332,13 @@ drawPageContents model =
                         |> List.concat
                         |> List.drop i
                         |> List.take screenRows
-
-                justify =
-                    Justify.node Justify.Centre model.screenColumns
             in
             rowsToShow
                 |> Table.view
                     { includeHeader = False
                     , columns = columns
                     }
-                |> List.map justify
+                |> centreJustifyScreen model
                 |> List.map Format.format
                 |> String.join "\n"
 

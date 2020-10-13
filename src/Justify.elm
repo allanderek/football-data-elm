@@ -2,6 +2,7 @@ module Justify exposing
     ( Justify(..)
     , node
     , string
+    , vertical
     )
 
 import Format
@@ -73,3 +74,47 @@ node justify width inputNode =
             , pad right
             ]
                 |> Format.Block
+
+
+vertical : Justify -> Int -> a -> List a -> List a
+vertical justify height empty lines =
+    let
+        currentHeight =
+            List.length lines
+
+        pad length =
+            List.repeat length empty
+    in
+    case justify of
+        None ->
+            lines
+
+        Right ->
+            [ pad (height - currentHeight)
+            , lines
+            ]
+                |> List.concat
+
+        Left ->
+            [ lines
+            , pad (height - currentHeight)
+            ]
+                |> List.concat
+
+        Centre ->
+            let
+                padRequired =
+                    height - currentHeight
+
+                upper =
+                    padRequired // 2
+
+                lower =
+                    -- So if it is an odd number the extra part will go on the right.
+                    padRequired - upper
+            in
+            [ pad upper
+            , lines
+            , pad lower
+            ]
+                |> List.concat
