@@ -633,6 +633,7 @@ formatStandings table =
         showForm _ pos =
             pos.form
                 |> String.toList
+                |> List.reverse
                 |> List.map showRes
                 |> Format.Block
 
