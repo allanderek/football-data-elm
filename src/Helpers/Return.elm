@@ -1,5 +1,6 @@
 module Helpers.Return exposing
-    ( combine
+    ( addCommand
+    , combine
     , noCommand
     , withCommand
     , withCommands
@@ -27,10 +28,16 @@ noCommand model =
     ( model, Cmd.none )
 
 
+addCommand : Cmd msg -> ( model, Cmd msg ) -> ( model, Cmd msg )
+addCommand command ( model, alreadyCommand ) =
+    ( model, Cmd.batch [ alreadyCommand, command ] )
+
+
 combine : (model -> ( model, Cmd msg )) -> ( model, Cmd msg ) -> ( model, Cmd msg )
 combine update ( model, command ) =
     let
         ( newModel, extraCommand ) =
             update model
     in
-    ( model, Cmd.batch [ command, extraCommand ] )
+    ( newModel, Cmd.batch [ command, extraCommand ] )
+

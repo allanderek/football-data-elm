@@ -14,6 +14,7 @@ import Ports
 import Private.Key
 import ProgramFlags exposing (ProgramFlags)
 import Table
+import Task
 import Time
 
 
@@ -68,6 +69,10 @@ main =
             ]
                 |> Sub.batch
 
+        getTimeZone =
+            Time.here
+                |> Task.perform TimeZoneGot
+
         init flags =
             { here = Time.utc
             , page = PageMatches 0
@@ -83,6 +88,7 @@ main =
                 ProgramFlags.decodeFlag flags 30 "columns" Decode.int
             }
                 |> gotoMatches
+                |> Return.addCommand getTimeZone
                 |> Return.combine outputPage
     in
     Platform.worker
@@ -346,6 +352,7 @@ drawPageContents model =
 type Msg
     = Input String
     | Resize Decode.Value
+    | TimeZoneGot Time.Zone
     | GetStandingsResponse (Http.Status FootballData.Table)
     | GetCompetitionsResponse (Http.Status FootballData.Competitions)
     | GetMatchesResponse (Http.Status FootballData.Matches)
@@ -410,6 +417,16 @@ update msg model =
                 , screenColumns = get model.screenColumns "columns"
             }
                 |> outputPage
+
+        TimeZoneGot zone ->
+            -- Whilst Britain is in winter, it uses Time.utc, it *should* work to put 'zone' here.
+            -- However, for some reason:
+            -- $ nodejs
+            -- > new Data().getTimezoneOffset();
+            -- -60
+            -- I don't know if this will persist, anyway the thing to change is here, if either that changes
+            -- or we get to BST.
+            Return.noCommand { model | here = Time.utc }
 
         GetStandingsResponse (Err error) ->
             let
