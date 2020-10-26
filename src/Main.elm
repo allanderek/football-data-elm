@@ -28,7 +28,13 @@ type alias Model =
     , screenRows : Int
     , screenColumns : Int
     , here : Time.Zone
+    , tickTock : TickTock
     }
+
+
+type TickTock
+    = Tick
+    | Tock
 
 
 withData : ModelData -> Model -> Model
@@ -71,9 +77,15 @@ presetKnownCompetitionIds =
 main : Program ProgramFlags Model Msg
 main =
     let
-        subscriptions _ =
+        subscriptions model =
             [ Ports.get Input
             , Ports.resize Resize
+            , case relevantRequestStatus model of
+                Ready ->
+                    Sub.none
+
+                Inflight ->
+                    Time.every 500 (always TickTock)
             ]
                 |> Sub.batch
 
@@ -97,6 +109,7 @@ main =
                 ProgramFlags.decodeFlag flags 30 "rows" Decode.int
             , screenColumns =
                 ProgramFlags.decodeFlag flags 30 "columns" Decode.int
+            , tickTock = Tick
             }
                 |> gotoMatches
                 |> Return.addCommand getTimeZone
@@ -122,6 +135,19 @@ outputPage model =
         |> outputMessage model
 
 
+relevantRequestStatus : Model -> RequestStatus
+relevantRequestStatus model =
+    case model.page of
+        PageCompetitions ->
+            model.competitionsRequestStatus
+
+        PageMatches _ ->
+            model.matchesRequestStatus
+
+        PageTable ->
+            model.standingsRequestStatus
+
+
 drawPage : Model -> String
 drawPage model =
     let
@@ -131,19 +157,17 @@ drawPage model =
         normal =
             Format.Span []
 
-        relevantRequestStatus =
-            case model.page of
-                PageCompetitions ->
-                    model.competitionsRequestStatus
-
-                PageMatches _ ->
-                    model.matchesRequestStatus
-
-                PageTable ->
-                    model.standingsRequestStatus
-
         workingIndicator =
-            case relevantRequestStatus of
+            let
+                character =
+                    case model.tickTock of
+                        Tick ->
+                            "/"
+
+                        Tock ->
+                            "\\"
+            in
+            case relevantRequestStatus model of
                 Ready ->
                     Format.text " "
 
@@ -152,7 +176,7 @@ drawPage model =
                         [ Color.FgRed
                         , Color.Bright
                         ]
-                        "/"
+                        character
 
         menu =
             [ [ keySpan "t", normal "able" ]
@@ -394,6 +418,7 @@ type Msg
     = Input String
     | Resize Decode.Value
     | TimeZoneGot Time.Zone
+    | TickTock
     | GetStandingsResponse (Http.Status FootballData.Table)
     | GetCompetitionsResponse (Http.Status FootballData.Competitions)
     | GetMatchesResponse (Http.Status FootballData.Matches)
@@ -489,6 +514,18 @@ update msg model =
             -- I don't know if this will persist, anyway the thing to change is here, if either that changes
             -- or we get to BST.
             Return.noCommand { model | here = Time.utc }
+
+        TickTock ->
+            { model
+                | tickTock =
+                    case model.tickTock of
+                        Tick ->
+                            Tock
+
+                        Tock ->
+                            Tick
+            }
+                |> outputPage
 
         GetStandingsResponse (Err error) ->
             let
