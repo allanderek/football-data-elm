@@ -20,6 +20,9 @@ import Time
 
 type alias Model =
     { data : ModelData
+    , standingsRequestStatus : RequestStatus
+    , competitionsRequestStatus : RequestStatus
+    , matchesRequestStatus : RequestStatus
     , page : Page
     , currentCompetition : FootballData.CompetitionId
     , screenRows : Int
@@ -44,6 +47,11 @@ type alias ModelData =
     , competitions : FootballData.Competitions
     , matches : FootballData.Matches
     }
+
+
+type RequestStatus
+    = Inflight
+    | Ready
 
 
 presetKnownCompetitionIds :
@@ -81,6 +89,9 @@ main =
                 , competitions = []
                 , matches = []
                 }
+            , standingsRequestStatus = Ready
+            , competitionsRequestStatus = Ready
+            , matchesRequestStatus = Ready
             , currentCompetition = presetKnownCompetitionIds.epl
             , screenRows =
                 ProgramFlags.decodeFlag flags 30 "rows" Decode.int
@@ -120,7 +131,30 @@ drawPage model =
         normal =
             Format.Span []
 
-        header =
+        relevantRequestStatus =
+            case model.page of
+                PageCompetitions ->
+                    model.competitionsRequestStatus
+
+                PageMatches _ ->
+                    model.matchesRequestStatus
+
+                PageTable ->
+                    model.standingsRequestStatus
+
+        workingIndicator =
+            case relevantRequestStatus of
+                Ready ->
+                    Format.text " "
+
+                Inflight ->
+                    Format.Span
+                        [ Color.FgRed
+                        , Color.Bright
+                        ]
+                        "/"
+
+        menu =
             [ [ keySpan "t", normal "able" ]
             , [ keySpan "m", normal "atches" ]
             , [ keySpan "c", normal "ompetitions" ]
@@ -134,7 +168,14 @@ drawPage model =
                 |> List.map Format.Block
                 |> List.intersperse (normal ", ")
                 |> Format.Block
-                |> Justify.node Justify.Centre model.screenColumns
+                -- -1 because we need to leave space for the working indicator
+                |> Justify.node Justify.Centre (model.screenColumns - 1)
+
+        header =
+            [ workingIndicator
+            , menu
+            ]
+                |> Format.Block
                 |> Format.format
 
         contentSpace =
@@ -393,14 +434,35 @@ presetCompetition newCompetitionId model =
 
 gotoMatches : Model -> ( Model, Cmd Msg )
 gotoMatches model =
+    let
+        scroll =
+            case model.page of
+                PageMatches i ->
+                    i
+
+                PageCompetitions ->
+                    0
+
+                PageTable ->
+                    0
+    in
     FootballData.getMatches Private.Key.key model.currentCompetition GetMatchesResponse
-        |> Return.withModel { model | page = PageMatches 0 }
+        |> Return.withModel { model | page = PageMatches scroll, matchesRequestStatus = Inflight }
+        |> Return.combine outputPage
 
 
 gotoTable : Model -> ( Model, Cmd Msg )
 gotoTable model =
     FootballData.getStandings Private.Key.key model.currentCompetition GetStandingsResponse
-        |> Return.withModel { model | page = PageTable }
+        |> Return.withModel { model | page = PageTable, standingsRequestStatus = Inflight }
+        |> Return.combine outputPage
+
+
+gotoCompetitions : Model -> ( Model, Cmd Msg )
+gotoCompetitions model =
+    FootballData.getCompetitions Private.Key.key GetCompetitionsResponse
+        |> Return.withModel { model | page = PageCompetitions, competitionsRequestStatus = Inflight }
+        |> Return.combine outputPage
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -437,14 +499,14 @@ update msg model =
             , Http.errorString error
             ]
                 |> String.join "\n"
-                |> outputMessage model
+                |> outputMessage { model | standingsRequestStatus = Ready }
 
         GetStandingsResponse (Ok standings) ->
             let
                 data =
                     model.data
             in
-            model
+            { model | standingsRequestStatus = Ready }
                 |> withData { data | standings = standings }
                 |> outputPage
 
@@ -453,7 +515,7 @@ update msg model =
                 data =
                     model.data
             in
-            model
+            { model | competitionsRequestStatus = Ready }
                 |> withData { data | competitions = competitions }
                 |> outputPage
 
@@ -466,7 +528,7 @@ update msg model =
             , Http.errorString error
             ]
                 |> String.join "\n"
-                |> outputMessage model
+                |> outputMessage { model | competitionsRequestStatus = Ready }
 
         GetMatchesResponse (Ok matches) ->
             let
@@ -536,7 +598,7 @@ update msg model =
                         current ->
                             current
             in
-            { model | page = newPage }
+            { model | page = newPage, matchesRequestStatus = Ready }
                 |> withData { data | matches = matches }
                 |> outputPage
 
@@ -549,7 +611,7 @@ update msg model =
             , Http.errorString error
             ]
                 |> String.join "\n"
-                |> outputMessage model
+                |> outputMessage { model | matchesRequestStatus = Ready }
 
         Input "q" ->
             "Goodbye."
@@ -557,8 +619,7 @@ update msg model =
                 |> Return.withModel model
 
         Input "c" ->
-            FootballData.getCompetitions Private.Key.key GetCompetitionsResponse
-                |> Return.withModel { model | page = PageCompetitions }
+            gotoCompetitions model
 
         Input "t" ->
             gotoTable model
