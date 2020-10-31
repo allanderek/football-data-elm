@@ -16,6 +16,7 @@ import ProgramFlags exposing (ProgramFlags)
 import Table
 import Task
 import Time
+import TimeZone
 
 
 type alias Model =
@@ -28,6 +29,7 @@ type alias Model =
     , screenRows : Int
     , screenColumns : Int
     , here : Time.Zone
+    , hereZoneName : String
     , tickTock : TickTock
     }
 
@@ -90,11 +92,12 @@ main =
                 |> Sub.batch
 
         getTimeZone =
-            Time.here
-                |> Task.perform TimeZoneGot
+            TimeZone.getZone
+                |> Task.attempt TimeZoneGot
 
         init flags =
             { here = Time.utc
+            , hereZoneName = "UTC"
             , page = PageMatches 0
             , data =
                 { standings = []
@@ -417,7 +420,7 @@ drawPageContents model =
 type Msg
     = Input String
     | Resize Decode.Value
-    | TimeZoneGot Time.Zone
+    | TimeZoneGot (Result TimeZone.Error ( String, Time.Zone ))
     | TickTock
     | GetStandingsResponse (Http.Status FootballData.Table)
     | GetCompetitionsResponse (Http.Status FootballData.Competitions)
@@ -505,15 +508,25 @@ update msg model =
             }
                 |> outputPage
 
-        TimeZoneGot zone ->
-            -- Whilst Britain is in winter, it uses Time.utc, it *should* work to put 'zone' here.
-            -- However, for some reason:
-            -- $ nodejs
-            -- > new Data().getTimezoneOffset();
-            -- -60
-            -- I don't know if this will persist, anyway the thing to change is here, if either that changes
-            -- or we get to BST.
-            Return.noCommand { model | here = Time.utc }
+        TimeZoneGot zoneResult ->
+            case zoneResult of
+                Err _ ->
+                    -- Okay, in this case I'm not sure what to do just keep it on utc I guess.
+                    Return.noCommand model
+
+                Ok ( zoneName, zone ) ->
+                    -- Whilst Britain is in winter, it uses Time.utc, it *should* work to put 'zone' here.
+                    -- However, for some reason:
+                    -- $ nodejs
+                    -- > new Date().getTimezoneOffset();
+                    -- -60
+                    -- I don't know if this will persist, anyway the thing to change is here, if either that changes
+                    -- or we get to BST.
+                    { model
+                        | here = Time.utc
+                        , hereZoneName = zoneName
+                    }
+                        |> Return.noCommand
 
         TickTock ->
             { model
