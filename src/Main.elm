@@ -1,6 +1,7 @@
 module Main exposing (main)
 
 import Color
+import Dict
 import FootballData
 import Format
 import Helpers.Http as Http
@@ -29,7 +30,6 @@ type alias Model =
     , screenRows : Int
     , screenColumns : Int
     , here : Time.Zone
-    , hereZoneName : String
     , tickTock : TickTock
     }
 
@@ -91,13 +91,15 @@ main =
             ]
                 |> Sub.batch
 
-        getTimeZone =
-            TimeZone.getZone
-                |> Task.attempt TimeZoneGot
-
         init flags =
-            { here = Time.utc
-            , hereZoneName = "UTC"
+            { here =
+                -- TODO: Of course we should allow passing this in as an argument.
+                case Dict.get "Europe/London" TimeZone.zones of
+                    Just getZone ->
+                        getZone ()
+
+                    Nothing ->
+                        Time.utc
             , page = PageMatches 0
             , data =
                 { standings = []
@@ -115,7 +117,6 @@ main =
             , tickTock = Tick
             }
                 |> gotoMatches
-                |> Return.addCommand getTimeZone
                 |> Return.combine outputPage
     in
     Platform.worker
@@ -420,7 +421,6 @@ drawPageContents model =
 type Msg
     = Input String
     | Resize Decode.Value
-    | TimeZoneGot (Result TimeZone.Error ( String, Time.Zone ))
     | TickTock
     | GetStandingsResponse (Http.Status FootballData.Table)
     | GetCompetitionsResponse (Http.Status FootballData.Competitions)
@@ -507,26 +507,6 @@ update msg model =
                 , screenColumns = get model.screenColumns "columns"
             }
                 |> outputPage
-
-        TimeZoneGot zoneResult ->
-            case zoneResult of
-                Err _ ->
-                    -- Okay, in this case I'm not sure what to do just keep it on utc I guess.
-                    Return.noCommand model
-
-                Ok ( zoneName, zone ) ->
-                    -- Whilst Britain is in winter, it uses Time.utc, it *should* work to put 'zone' here.
-                    -- However, for some reason:
-                    -- $ nodejs
-                    -- > new Date().getTimezoneOffset();
-                    -- -60
-                    -- I don't know if this will persist, anyway the thing to change is here, if either that changes
-                    -- or we get to BST.
-                    { model
-                        | here = Time.utc
-                        , hereZoneName = zoneName
-                    }
-                        |> Return.noCommand
 
         TickTock ->
             { model
