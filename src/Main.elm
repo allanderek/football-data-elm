@@ -67,12 +67,14 @@ presetKnownCompetitionIds :
     , laliga : FootballData.CompetitionId
     , bundesliga : FootballData.CompetitionId
     , seriea : FootballData.CompetitionId
+    , ucl : FootballData.CompetitionId
     }
 presetKnownCompetitionIds =
     { epl = 2021
     , laliga = 2014
     , bundesliga = 2002
     , seriea = 2019
+    , ucl = 2001
     }
 
 
@@ -192,6 +194,7 @@ drawPage model =
             , [ keySpan "l", normal "aliga" ]
             , [ keySpan "b", normal "undesliga" ]
             , [ keySpan "s", normal "eriea" ]
+            , [ keySpan "u", normal "cl" ]
             ]
                 |> List.map Format.Block
                 |> List.intersperse (normal ", ")
@@ -668,6 +671,9 @@ update msg model =
 
         Input "s" ->
             presetCompetition presetKnownCompetitionIds.seriea model
+
+        Input "u" ->
+            presetCompetition presetKnownCompetitionIds.ucl model
 
         Input "j" ->
             let
