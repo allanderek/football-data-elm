@@ -85,24 +85,16 @@ standingsDecoder =
         |> Decode.andField "table" (Decode.list tablePositionDecoder)
 
 
-getStandings : String -> CompetitionId -> (Http.Status Table -> msg) -> Cmd msg
+getStandings : String -> CompetitionId -> (Http.Status (List Table) -> msg) -> Cmd msg
 getStandings key competitionId toMessage =
     let
         allStandingsDecoder =
             Decode.field "standings" (Decode.list standingsDecoder)
 
         justTotal standings =
-            let
-                mTotals =
-                    List.find (\s -> s.type_ == "TOTAL") standings
-                        |> Maybe.map .table
-            in
-            case mTotals of
-                Nothing ->
-                    Decode.fail "The totals were not present."
-
-                Just totals ->
-                    Decode.succeed totals
+            standings
+                |> List.filter (\s -> s.type_ == "TOTAL")
+                |> List.map .table
     in
     { method = "GET"
     , headers = [ Http.header "X-Auth-Token" key ]
@@ -115,7 +107,7 @@ getStandings key competitionId toMessage =
     , body = Http.emptyBody
     , expect =
         allStandingsDecoder
-            |> Decode.andThen justTotal
+            |> Decode.map justTotal
             |> Http.expectJson toMessage
     , timeout = Nothing
     , tracker = Nothing

@@ -15,7 +15,6 @@ import Ports
 import Private.Key
 import ProgramFlags exposing (ProgramFlags)
 import Table
-import Task
 import Time
 import TimeZone
 
@@ -44,14 +43,18 @@ withData data model =
     { model | data = data }
 
 
+type alias Scroll =
+    Int
+
+
 type Page
     = PageCompetitions
-    | PageMatches Int
-    | PageTable
+    | PageMatches Scroll
+    | PageTable Scroll
 
 
 type alias ModelData =
-    { standings : FootballData.Table
+    { standings : List FootballData.Table
     , competitions : FootballData.Competitions
     , matches : FootballData.Matches
     }
@@ -150,7 +153,7 @@ relevantRequestStatus model =
         PageMatches _ ->
             model.matchesRequestStatus
 
-        PageTable ->
+        PageTable _ ->
             model.standingsRequestStatus
 
 
@@ -233,6 +236,20 @@ centreJustifyScreen model nodes =
         |> Justify.vertical Justify.Centre model.screenRows Format.nothing
 
 
+showScrolled : { a | screenRows : Int } -> Int -> List Format.Node -> List Format.Node
+showScrolled model scroll nodes =
+    let
+        headerSize =
+            1
+
+        screenRows =
+            model.screenRows - headerSize
+    in
+    nodes
+        |> List.drop scroll
+        |> List.take screenRows
+
+
 drawPageContents : Model -> String
 drawPageContents model =
     case model.page of
@@ -279,13 +296,21 @@ drawPageContents model =
                 |> List.map Format.format
                 |> String.join "\n"
 
-        PageTable ->
-            formatStandings model.data.standings
+        PageTable scroll ->
+            let
+                allStandingLines =
+                    model.data.standings
+                        |> List.map formatStandings
+                        |> List.intersperse [ Format.blankLine ]
+                        |> List.concat
+            in
+            allStandingLines
+                |> showScrolled model scroll
                 |> centreJustifyScreen model
                 |> List.map Format.format
                 |> String.join "\n"
 
-        PageMatches i ->
+        PageMatches scroll ->
             let
                 groups =
                     FootballData.groupMatchesByDate model.here model.data.matches
@@ -400,22 +425,14 @@ drawPageContents model =
                       , fromRow = always formatAwayTeam
                       }
                     ]
-
-                screenRows =
-                    -- minus 1 is intended to be for the header
-                    model.screenRows - 1
-
-                rowsToShow =
-                    List.map showGroup groups
-                        |> List.concat
-                        |> List.drop i
-                        |> List.take screenRows
             in
-            rowsToShow
+            List.map showGroup groups
+                |> List.concat
                 |> Table.view
                     { includeHeader = False
                     , columns = columns
                     }
+                |> showScrolled model scroll
                 |> centreJustifyScreen model
                 |> List.map Format.format
                 |> String.join "\n"
@@ -425,7 +442,7 @@ type Msg
     = Input String
     | Resize Decode.Value
     | TickTock
-    | GetStandingsResponse (Http.Status FootballData.Table)
+    | GetStandingsResponse (Http.Status (List FootballData.Table))
     | GetCompetitionsResponse (Http.Status FootballData.Competitions)
     | GetMatchesResponse (Http.Status FootballData.Matches)
 
@@ -459,14 +476,14 @@ presetCompetition newCompetitionId model =
         PageMatches _ ->
             newModel |> gotoMatches
 
-        PageTable ->
+        PageTable _ ->
             newModel |> gotoTable
 
 
 gotoMatches : Model -> ( Model, Cmd Msg )
 gotoMatches model =
     let
-        scroll =
+        matchesScroll =
             case model.page of
                 PageMatches i ->
                     i
@@ -474,18 +491,30 @@ gotoMatches model =
                 PageCompetitions ->
                     0
 
-                PageTable ->
+                PageTable _ ->
                     0
     in
     FootballData.getMatches Private.Key.key model.currentCompetition GetMatchesResponse
-        |> Return.withModel { model | page = PageMatches scroll, matchesRequestStatus = Inflight }
+        |> Return.withModel { model | page = PageMatches matchesScroll, matchesRequestStatus = Inflight }
         |> Return.combine outputPage
 
 
 gotoTable : Model -> ( Model, Cmd Msg )
 gotoTable model =
+    let
+        tableScroll =
+            case model.page of
+                PageTable i ->
+                    i
+
+                PageCompetitions ->
+                    0
+
+                PageMatches _ ->
+                    0
+    in
     FootballData.getStandings Private.Key.key model.currentCompetition GetStandingsResponse
-        |> Return.withModel { model | page = PageTable, standingsRequestStatus = Inflight }
+        |> Return.withModel { model | page = PageTable tableScroll, standingsRequestStatus = Inflight }
         |> Return.combine outputPage
 
 
@@ -679,8 +708,13 @@ update msg model =
             let
                 newModel =
                     case model.page of
-                        PageTable ->
-                            model
+                        PageTable scroll ->
+                            { model
+                                | page =
+                                    (scroll + 1)
+                                        -- TODO: it would be great to minmise to not allow scrolling off the page
+                                        |> PageTable
+                            }
 
                         PageCompetitions ->
                             let
@@ -704,8 +738,13 @@ update msg model =
             let
                 newModel =
                     case model.page of
-                        PageTable ->
-                            model
+                        PageTable scroll ->
+                            { model
+                                | page =
+                                    (scroll - 1)
+                                        |> max 0
+                                        |> PageTable
+                            }
 
                         PageCompetitions ->
                             let

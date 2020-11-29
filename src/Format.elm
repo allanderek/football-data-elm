@@ -1,6 +1,7 @@
 module Format exposing
     ( Attribute
     , Node(..)
+    , blankLine
     , format
     , length
     , nothing
@@ -18,6 +19,11 @@ nothing =
 text : String -> Node
 text =
     Span []
+
+
+blankLine : Node
+blankLine =
+    nothing
 
 
 type alias Attribute =
